@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply antialiased;
+    background-color: theme("colors.sage.50");
+    color: theme("colors.warm.900");
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-brand-600/20 transition-all hover:bg-brand-700 hover:shadow-lg hover:shadow-brand-600/25 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2 disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-warm-200 bg-white px-5 py-2.5 text-sm font-semibold text-warm-800 shadow-sm transition-colors hover:border-blossom-200 hover:bg-blossom-50 focus:outline-none focus:ring-2 focus:ring-lavender-300 focus:ring-offset-2;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-warm-700 transition-colors hover:bg-warm-100 hover:text-warm-900;
+  }
+  .input-field {
+    @apply w-full rounded-xl border border-warm-200 bg-white px-4 py-2.5 text-sm text-warm-900 placeholder:text-warm-400 focus:border-lavender-400 focus:outline-none focus:ring-2 focus:ring-lavender-200;
+  }
+  .card {
+    @apply rounded-2xl border border-sage-200/60 shadow-sm;
+    background-color: theme("colors.cream.50");
+  }
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
