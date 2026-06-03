@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Flower2 } from "lucide-react";
 import { useAuth } from "@/context/AppContext";
+import { useMarketplace } from "@/context/MarketplaceContext";
+import { buildSignupSeller } from "@/lib/signup-seller";
 
 export default function SignupPage() {
   const router = useRouter();
   const { signup } = useAuth();
+  const { addSeller, sellers, hydrated } = useMarketplace();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,11 +19,16 @@ export default function SignupPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    signup(name, email, password, role);
+    let sellerId: string | undefined;
+    if (role === "seller") {
+      if (!hydrated) return;
+      sellerId = addSeller(buildSignupSeller(name.trim() || "My Bakery", sellers.length));
+    }
+    signup(name, email, password, role, sellerId);
     if (role === "seller") {
       router.push("/dashboard");
     } else {
-      router.push("/search");
+      router.push("/explore");
     }
   };
 
@@ -31,7 +39,7 @@ export default function SignupPage() {
           <Flower2 className="h-6 w-6 text-white" />
         </div>
         <h1 className="mt-4 text-2xl font-bold text-earth-900">Join RouteFarm</h1>
-        <p className="mt-1 text-earth-600">Find or sell local products along daily routes</p>
+        <p className="mt-1 text-earth-600">Find fresh bakery near you or list your neighborhood bakery</p>
       </div>
 
       <form onSubmit={handleSubmit} className="card mt-8 space-y-4 p-6">
@@ -92,7 +100,7 @@ export default function SignupPage() {
                   : "border-earth-200 text-earth-600 hover:border-earth-300"
               }`}
             >
-              Sell products
+              Sell bakery products
             </button>
           </div>
         </div>

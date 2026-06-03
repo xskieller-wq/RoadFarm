@@ -35,6 +35,29 @@ export default function DashboardShell({ children }: { children: React.ReactNode
     );
   }
 
+  if (!seller) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold text-warm-900">Seller profile not found</h1>
+        <p className="mt-2 text-warm-600">
+          Your account is not linked to a seller record. Sign up again as a seller, or use the demo
+          bakery account.
+        </p>
+        <p className="mt-2 text-sm text-warm-500">
+          Demo bakery: <strong>seller@routefarm.com</strong> (any password)
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link href="/signup" className="btn-primary">
+            Sign up as seller
+          </Link>
+          <Link href="/login" className="btn-secondary">
+            Log in
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
