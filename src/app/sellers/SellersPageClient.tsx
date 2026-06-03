@@ -7,14 +7,22 @@ import SellerCard from "@/components/sellers/SellerCard";
 import { SELLER_TYPE_LABELS } from "@/data/seller-media";
 import type { SellerType } from "@/lib/types";
 
+/** Bakery-first; other types remain for future marketplace categories */
+const TYPE_ORDER: SellerType[] = [
+  "Baker",
+  "Gardener",
+  "Flower Grower",
+  "Florist",
+  "Beekeeper",
+  "Orchard Grower",
+  "Small Producer",
+];
+
 export default function SellersPageClient() {
   const { approvedSellers } = useMarketplace();
 
-  const typeOrder: SellerType[] = [
-    "Gardener", "Flower Grower", "Florist", "Beekeeper", "Orchard Grower", "Small Producer",
-  ];
-
-  const grouped = typeOrder.map((type) => ({
+  const bakers = approvedSellers.filter((s) => s.sellerType === "Baker");
+  const grouped = TYPE_ORDER.map((type) => ({
     type,
     sellers: approvedSellers.filter((s) => s.sellerType === type),
   })).filter((g) => g.sellers.length > 0);
@@ -24,13 +32,17 @@ export default function SellersPageClient() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="section-label text-blossom-600">Meet your neighbors</p>
-          <h1 className="text-3xl font-bold text-warm-900">Local growers near you</h1>
+          <h1 className="text-3xl font-bold text-warm-900">Local bakers near you</h1>
           <p className="mt-2 max-w-xl text-warm-600">
-            {approvedSellers.length} growers, gardeners, beekeepers and flower makers — each with photos, badges, and reviews.
+            {bakers.length > 0
+              ? `${bakers.length} neighborhood baker${bakers.length === 1 ? "" : "ies"} with fresh batch times and pickup windows.`
+              : "Neighborhood sellers with photos, badges, and reviews."}
+            {approvedSellers.length > bakers.length &&
+              ` Plus ${approvedSellers.length - bakers.length} other local makers (flowers, produce, and more coming soon).`}
           </p>
         </div>
         <Link href="/explore" className="btn-primary shrink-0">
-          Explore on map
+          Explore bakery map
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
