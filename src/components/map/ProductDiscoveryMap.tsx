@@ -2,9 +2,10 @@
 
 import { useMemo, useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { MapPin, ChevronDown, ChevronUp, Package, Zap } from "lucide-react";
+import { MapPin, ChevronDown, ChevronUp, Package, Zap, ArrowRight, List } from "lucide-react";
 import { isSellerAvailableNow } from "@/lib/seller-availability";
-import type { Product, Seller } from "@/lib/types";
+import type { Product, RouteSearchParams, Seller } from "@/lib/types";
+import { searchProductsAlongRoute, buildSearchQueryString } from "@/lib/route-search";
 import ProductMapPin from "./ProductMapPin";
 import MapCanvasBackground from "./MapCanvasBackground";
 import RouteSearchForm from "@/components/search/RouteSearchForm";
@@ -43,17 +44,39 @@ export default function ProductDiscoveryMap({
   const [activeCategories, setActiveCategories] = useState<Set<MiniMapCategory>>(
     new Set(initialCategories)
   );
+  const [mapMode, setMapMode] = useState<"nearby" | "route">("nearby");
   const [routeOpen, setRouteOpen] = useState(false);
+  const [routeParams, setRouteParams] = useState<RouteSearchParams | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const mapRef = useRef<HTMLDivElement>(null);
 
   const sellerMap = useMemo(() => new Map(sellers.map((s) => [s.id, s])), [sellers]);
   const bounds = useMemo(() => getMapBounds(sellers), [sellers]);
 
-  const visibleProducts = useMemo(
+  const categoryFiltered = useMemo(
     () => filterProductsByMiniMapCategories(products, activeCategories),
     [products, activeCategories]
   );
+
+  const visibleProducts = useMemo(() => {
+    if (mapMode === "route" && routeParams) {
+      return searchProductsAlongRoute(categoryFiltered, routeParams);
+    }
+    return categoryFiltered;
+  }, [mapMode, routeParams, categoryFiltered]);
+
+  const enterRouteMode = () => {
+    setMapMode("route");
+    setRouteOpen(true);
+    setSelectedProductId(null);
+  };
+
+  const exitRouteMode = () => {
+    setMapMode("nearby");
+    setRouteParams(null);
+    setRouteOpen(false);
+    setSelectedProductId(null);
+  };
 
   const priceRange = useMemo(() => getPriceRange(visibleProducts), [visibleProducts]);
 
@@ -146,16 +169,49 @@ export default function ProductDiscoveryMap({
             <div className="mt-6 border-t border-warm-200 pt-4">
               <button
                 type="button"
-                onClick={() => setRouteOpen(!routeOpen)}
-                className="flex w-full items-center justify-between text-sm font-semibold text-warm-800"
+                onClick={() => {
+                  if (mapMode === "route") {
+                    setRouteOpen(!routeOpen);
+                  } else {
+                    enterRouteMode();
+                  }
+                }}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
+                  mapMode === "route"
+                    ? "bg-brand-600 text-white shadow-md"
+                    : "text-warm-800 hover:bg-white/80"
+                }`}
               >
                 Along My Route
                 {routeOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
               {routeOpen && (
                 <div className="mt-3">
-                  <p className="mb-2 text-xs text-warm-500">Optional — find pickups on your drive</p>
-                  <RouteSearchForm compact />
+                  <p className="mb-2 text-xs text-warm-500">
+                    {mapMode === "route"
+                      ? "Set your drive — the map updates with stops along the way"
+                      : "Find pickups on your drive"}
+                  </p>
+                  <RouteSearchForm
+                    compact
+                    defaultStart={routeParams?.start}
+                    defaultDestination={routeParams?.destination}
+                    defaultMaxDetour={routeParams?.maxDetour ?? 5}
+                    onRouteSearch={(params) => {
+                      setRouteParams(params);
+                      setMapMode("route");
+                    }}
+                    submitLabel="Update map for this route"
+                  />
+                  {mapMode === "route" && (
+                    <button
+                      type="button"
+                      onClick={exitRouteMode}
+                      className="mt-3 w-full text-left text-xs font-medium text-brand-700 hover:underline"
+                    >
+                      ← Back to neighborhood map
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -169,6 +225,27 @@ export default function ProductDiscoveryMap({
           onClick={() => setSelectedProductId(null)}
         >
           <MapCanvasBackground />
+
+          {mapMode === "route" && routeParams && (
+            <div className="absolute left-4 right-4 top-4 z-10 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="rounded-2xl bg-brand-600/95 px-4 py-3 text-sm text-white shadow-lg backdrop-blur">
+                <p className="font-semibold">Along your route</p>
+                <p className="mt-0.5 flex flex-wrap items-center gap-1 text-white/90">
+                  <span>{routeParams.start}</span>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+                  <span>{routeParams.destination}</span>
+                  <span className="text-white/70">· max {routeParams.maxDetour} min detour</span>
+                </p>
+              </div>
+              <Link
+                href={`/results?${buildSearchQueryString(routeParams)}`}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/95 px-4 py-2 text-sm font-semibold text-brand-700 shadow-md hover:bg-white"
+              >
+                <List className="h-4 w-4" />
+                List view
+              </Link>
+            </div>
+          )}
 
           {visibleProducts.map((product, i) => {
             const seller = sellerMap.get(product.sellerId);
@@ -193,7 +270,9 @@ export default function ProductDiscoveryMap({
           {visibleProducts.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center p-6">
               <p className="rounded-2xl bg-white/95 px-5 py-3 text-center text-sm text-warm-600 shadow-md backdrop-blur">
-                No products match your filters. Try another category.
+                {mapMode === "route" && routeParams
+                  ? "No products along this route with your filters. Try more detour time or another category."
+                  : "No products match your filters. Try another category."}
               </p>
             </div>
           )}
@@ -202,7 +281,8 @@ export default function ProductDiscoveryMap({
           <div className="absolute bottom-4 left-4 rounded-2xl bg-white/95 px-4 py-2.5 shadow-lg backdrop-blur">
             <p className="flex items-center gap-1.5 text-sm font-semibold text-warm-900">
               <Package className="h-3.5 w-3.5 text-brand-600" />
-              {visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"} nearby
+              {visibleProducts.length} {visibleProducts.length === 1 ? "product" : "products"}{" "}
+              {mapMode === "route" && routeParams ? "on your route" : "nearby"}
             </p>
             {availableNowCount > 0 && (
               <p className="mt-1 flex items-center gap-1 text-xs font-semibold text-sunflower-800">
@@ -242,7 +322,11 @@ export default function ProductDiscoveryMap({
 
       {showProductList && visibleProducts.length > 0 && (
         <div className="border-t border-warm-100 bg-warm-50/50 p-6">
-          <h3 className="text-lg font-bold text-warm-900">Products from neighbors nearby</h3>
+          <h3 className="text-lg font-bold text-warm-900">
+            {mapMode === "route" && routeParams
+              ? "Products along your route"
+              : "Products from neighbors nearby"}
+          </h3>
           <p className="mt-1 text-sm text-warm-600">Each listing shows the grower behind it</p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visibleProducts.slice(0, 9).map((p) => (

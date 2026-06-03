@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { MapPin, Navigation, Clock } from "lucide-react";
+import type { RouteSearchParams } from "@/lib/types";
 import { DETOUR_OPTIONS } from "@/lib/types";
 import { buildSearchQueryString } from "@/lib/route-search";
 
@@ -12,6 +13,9 @@ interface RouteSearchFormProps {
   defaultMaxDetour?: number;
   compact?: boolean;
   variant?: "default" | "hero";
+  /** When set, submit updates the explore map instead of navigating away */
+  onRouteSearch?: (params: RouteSearchParams) => void;
+  submitLabel?: string;
 }
 
 export default function RouteSearchForm({
@@ -20,6 +24,8 @@ export default function RouteSearchForm({
   defaultMaxDetour = 5,
   compact = false,
   variant = "default",
+  onRouteSearch,
+  submitLabel = "Find products along my route",
 }: RouteSearchFormProps) {
   const router = useRouter();
   const [start, setStart] = useState(defaultStart);
@@ -28,12 +34,16 @@ export default function RouteSearchForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const query = buildSearchQueryString({
+    const params: RouteSearchParams = {
       start: start || "Norridge, IL",
       destination: destination || "Des Plaines, IL",
       maxDetour,
-    });
-    router.push(`/results?${query}`);
+    };
+    if (onRouteSearch) {
+      onRouteSearch(params);
+      return;
+    }
+    router.push(`/results?${buildSearchQueryString(params)}`);
   };
 
   const isHero = variant === "hero";
@@ -111,7 +121,7 @@ export default function RouteSearchForm({
 
       <button type="submit" className={submitClass}>
         <MapPin className="h-4 w-4" />
-        Find products along my route
+        {submitLabel}
       </button>
     </form>
   );
