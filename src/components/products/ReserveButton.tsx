@@ -38,8 +38,11 @@ export default function ReserveButton({ product, sellerName, sellerId }: Reserve
       <div className="mt-6 flex items-center gap-3 rounded-2xl border border-blossom-200 bg-blossom-50 p-4">
         <CheckCircle className="h-6 w-6 text-blossom-600" />
         <div>
-          <p className="font-semibold text-blossom-800">Reserved for pickup!</p>
-          <p className="text-sm text-blossom-700">The seller will confirm your reservation.</p>
+          <p className="font-semibold text-blossom-800">Demo reservation saved</p>
+          <p className="text-sm text-blossom-700">
+            Stored on this device only. The seller is not notified in this MVP — contact them directly
+            to confirm pickup.
+          </p>
         </div>
       </div>
     );
@@ -54,12 +57,18 @@ export default function ReserveButton({ product, sellerName, sellerId }: Reserve
   }
 
   return (
-    <button
-      onClick={handleReserve}
-      disabled={product.sold || product.quantityAvailable === 0}
-      className="btn-primary mt-6 w-full sm:w-auto"
-    >
-      Reserve for pickup
-    </button>
+    <div className="mt-6">
+      <button
+        onClick={handleReserve}
+        disabled={product.sold || product.quantityAvailable === 0}
+        className="btn-primary w-full sm:w-auto"
+      >
+        Save demo reservation
+      </button>
+      <p className="mt-2 text-xs text-warm-500">
+        MVP demo: saves locally on your browser. Sellers are not notified — arrange pickup with the
+        baker directly.
+      </p>
+    </div>
   );
 }

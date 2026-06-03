@@ -5,14 +5,22 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
   type ReactNode,
 } from "react";
 import type { User, Reservation } from "@/lib/types";
+import { loadPersistedReservations, persistReservations } from "@/lib/reservation-persistence";
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => boolean;
-  signup: (name: string, email: string, password: string, role: "buyer" | "seller") => boolean;
+  signup: (
+    name: string,
+    email: string,
+    password: string,
+    role: "buyer" | "seller",
+    sellerId?: string
+  ) => boolean;
   logout: () => void;
   isSeller: boolean;
   isAdmin: boolean;
@@ -29,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser({
       id: "u1",
       email,
-      name: isAdmin ? "RouteFarm Admin" : isSeller ? "Green Valley Farm" : "Demo Buyer",
+      name: isAdmin ? "RouteFarm Admin" : isSeller ? "Harbor Street Bakery" : "Demo Buyer",
       role: isAdmin ? "admin" : isSeller ? "seller" : "buyer",
       sellerId: isSeller ? "s1" : undefined,
     });
@@ -37,13 +45,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signup = useCallback(
-    (name: string, email: string, _password: string, role: "buyer" | "seller") => {
+    (
+      name: string,
+      email: string,
+      _password: string,
+      role: "buyer" | "seller",
+      sellerId?: string
+    ) => {
       setUser({
         id: "u-new",
         email,
         name,
         role,
-        sellerId: role === "seller" ? "s-new" : undefined,
+        sellerId: role === "seller" ? sellerId : undefined,
       });
       return true;
     },
@@ -83,6 +97,17 @@ const ReservationContext = createContext<ReservationContextType | null>(null);
 
 export function ReservationProvider({ children }: { children: ReactNode }) {
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservationsHydrated, setReservationsHydrated] = useState(false);
+
+  useEffect(() => {
+    setReservations(loadPersistedReservations());
+    setReservationsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!reservationsHydrated) return;
+    persistReservations(reservations);
+  }, [reservations, reservationsHydrated]);
 
   const addReservation = useCallback(
     (reservation: Omit<Reservation, "id" | "reservedAt" | "status">) => {
@@ -92,7 +117,7 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
           ...reservation,
           id: `r${Date.now()}`,
           reservedAt: new Date().toISOString(),
-          status: "confirmed",
+          status: "pending",
         },
       ]);
     },
