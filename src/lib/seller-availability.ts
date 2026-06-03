@@ -48,6 +48,12 @@ export function isSellerVisibleOnMap(seller: Seller): boolean {
   );
 }
 
+/** Buyer-facing listings: approved sellers only, same rules as explore map */
+export function getBuyerVisibleProducts(products: Product[], sellers: Seller[]): Product[] {
+  const approved = sellers.filter((s) => s.approvalStatus === "approved");
+  return filterProductsForMap(products, approved);
+}
+
 /** Map + explore: hide vacation/unavailable; prioritize Available Now */
 export function filterProductsForMap(products: Product[], sellers: Seller[]): Product[] {
   const sellerMap = new Map(sellers.map((s) => [s.id, s]));

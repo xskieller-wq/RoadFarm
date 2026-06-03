@@ -7,12 +7,18 @@ import { List, ArrowRight } from "lucide-react";
 import MapView from "@/components/map/MapView";
 import { useMarketplace } from "@/context/MarketplaceContext";
 import { searchProductsAlongRoute, parseSearchParams } from "@/lib/route-search";
+import { getBuyerVisibleProducts } from "@/lib/seller-availability";
+import { useMemo } from "react";
 
 function MapContent() {
-  const { products } = useMarketplace();
+  const { products, sellers, hydrated } = useMarketplace();
   const searchParams = useSearchParams();
   const params = parseSearchParams(searchParams);
-  const results = searchProductsAlongRoute(products, params);
+  const visibleProducts = useMemo(
+    () => (hydrated ? getBuyerVisibleProducts(products, sellers) : []),
+    [products, sellers, hydrated]
+  );
+  const results = searchProductsAlongRoute(visibleProducts, params);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
