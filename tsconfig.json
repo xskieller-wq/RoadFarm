@@ -15,7 +15,14 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@routefarm/shared": ["./packages/shared/src/index.ts"],
+      "@routefarm/shared/*": ["./packages/shared/src/*"],
+      "@routefarm/supabase": ["./packages/supabase/src/index.ts"],
+      "@routefarm/supabase/server": ["./packages/supabase/src/server.ts"],
+      "@routefarm/supabase/browser": ["./packages/supabase/src/browser.ts"],
+      "@routefarm/supabase/cookies": ["./packages/supabase/src/cookies.ts"],
+      "@routefarm/database": ["./packages/database/src/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

@@ -1,21 +1,24 @@
 "use client";
 
-import type { FreshnessLabel } from "@/lib/types";
-import { FRESHNESS_LABEL_OPTIONS } from "@/lib/freshness";
+import type { FreshnessLabel, ProductCategory } from "@/lib/types";
+import { getFreshnessOptionsForCategory } from "@/lib/freshness";
 
 interface FreshnessLabelSelectProps {
   value: FreshnessLabel;
   onChange: (value: FreshnessLabel) => void;
+  category?: ProductCategory;
 }
 
-export default function FreshnessLabelSelect({ value, onChange }: FreshnessLabelSelectProps) {
+export default function FreshnessLabelSelect({ value, onChange, category }: FreshnessLabelSelectProps) {
+  const options = category ? getFreshnessOptionsForCategory(category) : getFreshnessOptionsForCategory("Bread");
+
   return (
     <select
       className="input-field"
       value={value}
       onChange={(e) => onChange(e.target.value as FreshnessLabel)}
     >
-      {FRESHNESS_LABEL_OPTIONS.map((label) => (
+      {options.map((label) => (
         <option key={label} value={label}>
           {label}
         </option>

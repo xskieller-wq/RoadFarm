@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "RouteFarm",
+    "slug": "routefarm",
+    "version": "0.1.0",
+    "scheme": "routefarm",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#2d3d2d"
+    },
+    "ios": {
+      "bundleIdentifier": "com.routefarm.app"
+    },
+    "android": {
+      "package": "com.routefarm.app"
+    },
+    "plugins": ["expo-router"]
+  }
+}

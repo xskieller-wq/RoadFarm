@@ -6,14 +6,16 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { useSellerDashboard } from "@/lib/use-seller-dashboard";
 import {
-  ALL_CATEGORIES,
+  BAKERY_CATEGORIES,
+  FUTURE_CATEGORIES,
   COMPLIANCE_CATEGORIES,
+  isBakeryCategory,
   type ProductCategory,
   type FreshnessLabel,
   type ProductPhoto,
   type ProductVideo,
 } from "@/lib/types";
-import { FRESHNESS_LABEL_OPTIONS } from "@/lib/freshness";
+import { BAKERY_FRESHNESS_LABEL_OPTIONS, getFreshnessOptionsForCategory } from "@/lib/freshness";
 import { getProductImage } from "@/data/images";
 import ProductMediaEditor from "@/components/products/ProductMediaEditor";
 
@@ -22,7 +24,7 @@ export default function AddProductPage() {
   const { seller, addProduct } = useSellerDashboard();
 
   const [category, setCategory] = useState<ProductCategory | "">("");
-  const [freshnessLabel, setFreshnessLabel] = useState<FreshnessLabel>("Picked Today");
+  const [freshnessLabel, setFreshnessLabel] = useState<FreshnessLabel>("Made Today");
   const [photos, setPhotos] = useState<ProductPhoto[]>([]);
   const [videos, setVideos] = useState<ProductVideo[]>([]);
 
@@ -83,19 +85,26 @@ export default function AddProductPage() {
           <select
             className="input-field"
             value={category}
-            onChange={(e) => setCategory(e.target.value as ProductCategory)}
+            onChange={(e) => {
+              const next = e.target.value as ProductCategory;
+              setCategory(next);
+              const options = getFreshnessOptionsForCategory(next);
+              if (!options.includes(freshnessLabel)) {
+                setFreshnessLabel(options[0]);
+              }
+            }}
             required
           >
             <option value="">Select category</option>
-            <optgroup label="Food & garden">
-              {ALL_CATEGORIES.slice(0, 7).map((cat) => (
+            <optgroup label="Bakery (MVP)">
+              {BAKERY_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="Flowers">
-              {ALL_CATEGORIES.slice(7).map((cat) => (
+            <optgroup label="Coming later">
+              {FUTURE_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
                 </option>
@@ -127,7 +136,10 @@ export default function AddProductPage() {
             value={freshnessLabel}
             onChange={(e) => setFreshnessLabel(e.target.value as FreshnessLabel)}
           >
-            {FRESHNESS_LABEL_OPTIONS.map((label) => (
+            {(category && isBakeryCategory(category)
+              ? BAKERY_FRESHNESS_LABEL_OPTIONS
+              : getFreshnessOptionsForCategory(category || "Bread")
+            ).map((label) => (
               <option key={label} value={label}>
                 {label}
               </option>

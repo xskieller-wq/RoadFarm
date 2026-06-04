@@ -31,6 +31,18 @@ export function slugify(text: string): string {
 }
 
 export function getCategoryColor(category: string): string {
+  const bakeryCategories = [
+    "Polish Paczki",
+    "Donuts",
+    "Bread",
+    "Cakes",
+    "Pastries",
+    "Cookies",
+  ];
+  if (category === "Polish Paczki") return "bg-blossom-100 text-blossom-800";
+  if (category === "Donuts") return "bg-sunflower-100 text-sunflower-800";
+  if (bakeryCategories.includes(category)) return "bg-warm-100 text-warm-800";
+
   const flowerCategories = [
     "Fresh Flowers",
     "Roses",
@@ -54,8 +66,18 @@ export function getCategoryColor(category: string): string {
 }
 
 export function getFreshnessColor(label: string): string {
-  if (label.includes("Batch") || label.includes("6 AM") || label.includes("7 AM") || label.includes("12 PM")) {
+  if (
+    label === "Fresh Batch Time" ||
+    label === "Fresh Batch Alerts" ||
+    label.includes("Batch") ||
+    label.includes("6 AM") ||
+    label.includes("7 AM") ||
+    label.includes("12 PM")
+  ) {
     return "bg-sunflower-100 text-sunflower-800";
+  }
+  if (label === "Made Today" || label === "Available Now") {
+    return "bg-sage-100 text-sage-700";
   }
   if (label.includes("Picked") || label.includes("Collected") || label.includes("Cut Today")) {
     return "bg-sage-100 text-sage-700";

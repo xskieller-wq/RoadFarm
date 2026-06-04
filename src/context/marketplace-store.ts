@@ -1,43 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { Product, Seller, SellerReview, UserReport } from "@/lib/types";
 import type { SellerBadgeId } from "@/lib/types";
-import { sellers as initialSellers, products as initialProducts } from "@/data/seed-data";
 import { inferSellerBadges } from "@/data/badges";
-import { enrichSellerMedia } from "@/data/seller-media";
 import { inferFreshnessLabel } from "@/lib/freshness";
-
-const initialReviews: SellerReview[] = initialSellers.slice(0, 12).flatMap((s, i) => [
-  {
-    id: `rev-${s.id}-1`,
-    sellerId: s.id,
-    authorName: ["Maria K.", "James T.", "Sarah L.", "David R."][i % 4],
-    rating: 5,
-    text: "Always fresh and exactly as described. Love supporting a neighbor!",
-    createdAt: "2024-11-12T10:00:00Z",
-    visible: true,
-  },
-  {
-    id: `rev-${s.id}-2`,
-    sellerId: s.id,
-    authorName: ["Anna P.", "Mike S.", "Lisa W.", "Tom H."][i % 4],
-    rating: s.rating >= 4.8 ? 5 : 4,
-    text: "Beautiful garden — you can tell they care about what they grow.",
-    createdAt: "2024-10-05T14:30:00Z",
-    visible: true,
-  },
-]);
-
-const initialReports: UserReport[] = [
-  {
-    id: "rep-1",
-    type: "product",
-    targetId: "p1",
-    targetName: "Farm Fresh Dozen Eggs",
-    reason: "Quantity mismatch at pickup",
-    status: "open",
-    createdAt: "2024-12-01T09:00:00Z",
-  },
-];
 
 export type MarketplaceState = {
   sellers: Seller[];
@@ -46,11 +11,12 @@ export type MarketplaceState = {
   reports: UserReport[];
 };
 
+/** Empty until client hydration — seed catalog loads in MarketplaceProvider (not in layout chunk). */
 export const marketplaceInitialState: MarketplaceState = {
-  sellers: initialSellers.map((s) => ({ ...s })),
-  products: initialProducts.map((p) => ({ ...p, photos: [...p.photos] })),
-  reviews: initialReviews,
-  reports: initialReports,
+  sellers: [],
+  products: [],
+  reviews: [],
+  reports: [],
 };
 
 export type MarketplaceActions = {
@@ -89,11 +55,25 @@ export function createMarketplaceActions(
       })),
     addSeller: (seller) => {
       const id = `s${Date.now()}`;
-      const enriched = enrichSellerMedia({ ...seller, id } as Parameters<typeof enrichSellerMedia>[0], 99);
       setState((s) => ({
         ...s,
-        sellers: [...s.sellers, { ...enriched, id, badges: seller.badges?.length ? seller.badges : inferSellerBadges(enriched) }],
+        sellers: [
+          ...s.sellers,
+          {
+            ...seller,
+            id,
+            badges: seller.badges?.length ? seller.badges : inferSellerBadges({ ...seller, id } as Seller),
+          },
+        ],
       }));
+      void import("@/data/seller-media").then(({ enrichSellerMedia }) => {
+        setState((s) => ({
+          ...s,
+          sellers: s.sellers.map((x) =>
+            x.id === id ? { ...enrichSellerMedia(x, 99), id, badges: x.badges } : x
+          ),
+        }));
+      });
       return id;
     },
     toggleFeatured: (id) =>

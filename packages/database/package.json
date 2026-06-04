@@ -1,0 +1,17 @@
+{
+  "name": "@routefarm/database",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@routefarm/shared": "*",
+    "@supabase/supabase-js": "^2.47.10"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

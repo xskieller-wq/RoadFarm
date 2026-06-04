@@ -1,11 +1,23 @@
+/** MVP bakery categories */
+export type BakeryCategory =
+  | "Polish Paczki"
+  | "Donuts"
+  | "Bread"
+  | "Cakes"
+  | "Pastries"
+  | "Cookies";
+
 export type FoodCategory =
   | "Eggs"
   | "Fruits"
   | "Vegetables"
   | "Honey"
   | "Herbs"
+  | "Mushrooms"
   | "Pickled Foods"
-  | "Fermented Foods";
+  | "Fermented Foods"
+  | "Preserves"
+  | "Homemade Drinks";
 
 export type FlowerCategory =
   | "Fresh Flowers"
@@ -16,7 +28,7 @@ export type FlowerCategory =
   | "Bouquets"
   | "Handmade Bouquets";
 
-export type ProductCategory = FoodCategory | FlowerCategory;
+export type ProductCategory = BakeryCategory | FoodCategory | FlowerCategory;
 
 export type FreshnessStatus =
   | "Growing Now"
@@ -25,13 +37,20 @@ export type FreshnessStatus =
   | "Available Now"
   | "Ready For Pickup";
 
-/** Product freshness — how/when the item is prepared (not seller hours) */
-export type FreshnessLabel =
+/** Bakery-first freshness (main MVP value prop) */
+export type BakeryFreshnessLabel =
+  | "Fresh Batch Time"
+  | "Made Today"
+  | "Made To Order"
+  | "Available Now"
+  | "Fresh Batch Alerts";
+
+/** Legacy / future categories */
+export type LegacyFreshnessLabel =
   | "Picked Today"
   | "Picked After Order"
   | "Cut Today"
   | "Cut Before Pickup"
-  | "Made To Order"
   | "Collected Today"
   | "Fresh Batch"
   | "Fresh Batch At 6 AM"
@@ -39,6 +58,9 @@ export type FreshnessLabel =
   | "Fresh Batch At 12 PM"
   | "Ready For Pickup"
   | "Growing Now";
+
+/** Product freshness — how/when the item is prepared (not seller hours) */
+export type FreshnessLabel = BakeryFreshnessLabel | LegacyFreshnessLabel;
 
 export type PhotoType =
   | "product"
@@ -79,6 +101,7 @@ export interface SellerCompliance {
 }
 
 export type SellerType =
+  | "Baker"
   | "Gardener"
   | "Flower Grower"
   | "Beekeeper"
@@ -210,6 +233,10 @@ export interface Product {
   freshnessStatus: FreshnessStatus;
   /** How fresh the product is (displayed to buyers) */
   freshnessLabel?: FreshnessLabel;
+  /** Shown with Fresh Batch Time (e.g. "6:00 AM") */
+  freshnessBatchTime?: string;
+  /** Buyer can opt into batch-ready alerts for this listing */
+  freshBatchAlerts?: boolean;
   /** Optional display override */
   freshnessNote?: string;
   estimatedDetourMinutes: number;
@@ -247,30 +274,14 @@ export interface User {
   sellerId?: string;
 }
 
-export const FOOD_CATEGORIES: FoodCategory[] = [
-  "Eggs",
-  "Fruits",
-  "Vegetables",
-  "Honey",
-  "Herbs",
-  "Pickled Foods",
-  "Fermented Foods",
-];
-
-export const FLOWER_CATEGORIES: FlowerCategory[] = [
-  "Fresh Flowers",
-  "Roses",
-  "Sunflowers",
-  "Seasonal Flowers",
-  "Cut Flowers",
-  "Bouquets",
-  "Handmade Bouquets",
-];
-
-export const ALL_CATEGORIES: ProductCategory[] = [
-  ...FOOD_CATEGORIES,
-  ...FLOWER_CATEGORIES,
-];
+export {
+  BAKERY_CATEGORIES,
+  FUTURE_CATEGORIES,
+  ALL_CATEGORIES,
+  COMPLIANCE_CATEGORIES,
+  isBakeryCategory,
+  isFutureCategory,
+} from "@/lib/categories";
 
 export const FRESHNESS_STATUSES: FreshnessStatus[] = [
   "Growing Now",
@@ -281,11 +292,6 @@ export const FRESHNESS_STATUSES: FreshnessStatus[] = [
 ];
 
 export const DETOUR_OPTIONS = [0, 2, 5, 10] as const;
-
-export const COMPLIANCE_CATEGORIES: ProductCategory[] = [
-  "Pickled Foods",
-  "Fermented Foods",
-];
 
 export const BOUQUET_TYPES = [
   "birthday bouquets",

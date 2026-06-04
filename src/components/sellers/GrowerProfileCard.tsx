@@ -2,161 +2,105 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Shield, Play, MapPin } from "lucide-react";
-import type { Seller } from "@/lib/types";
-import { SELLER_TYPE_LABELS, VIDEO_TYPE_LABELS } from "@/data/seller-media";
+import { Shield, MapPin, ChevronRight } from "lucide-react";
+import type { Seller, Product } from "@/lib/types";
+import { SELLER_TYPE_LABELS } from "@/data/seller-media";
 import { useMarketplace } from "@/context/MarketplaceContext";
-import { getMainProductCategories, getSampleReview } from "@/lib/seller-utils";
+import {
+  getMainProductCategories,
+  getSellerCardImage,
+  getSellerHighlightProducts,
+  formatProductFreshnessLine,
+} from "@/lib/seller-utils";
+import { getSellerAvailabilityLine } from "@/lib/seller-availability";
+import { getBakerAvatarImage } from "@/data/images";
 import StarRating from "@/components/ui/StarRating";
-import SellerBadges from "@/components/sellers/SellerBadges";
-import SellerAvailability from "@/components/sellers/SellerAvailability";
 
 interface GrowerProfileCardProps {
   seller: Seller;
+  /** @deprecated Use compact layout only — kept for API compatibility */
   size?: "large" | "standard";
 }
 
-export default function GrowerProfileCard({ seller, size = "standard" }: GrowerProfileCardProps) {
-  const { products } = useMarketplace();
-  const mainProducts = getMainProductCategories(products, seller.id);
-  const reviewSnippet = getSampleReview(seller.id);
-  const galleryPhotos = [
-    seller.gardenPhotos[0],
-    seller.flowerPhotos[0],
-    seller.greenhousePhotos[0],
-    seller.gardenPhotos[1],
-  ].filter(Boolean);
+function ProductHighlights({ products, sellerId }: { products: Product[]; sellerId: string }) {
+  const highlights = getSellerHighlightProducts(products, sellerId, 2);
+  if (highlights.length === 0) return null;
 
-  if (size === "large") {
-    return (
-      <Link
-        href={`/sellers/${seller.id}`}
-        className="group grid overflow-hidden rounded-3xl bg-white shadow-md ring-1 ring-warm-200/80 transition-all hover:shadow-xl hover:ring-lavender-200 lg:grid-cols-5"
-      >
-        {/* Photo collage — gardens & flowers */}
-        <div className="relative min-h-[240px] lg:col-span-2 lg:min-h-[320px]">
-          <Image
-            src={seller.gardenPhotos[0]?.url || seller.coverPhoto}
-            alt={`${seller.name} garden`}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
-            sizes="(max-width: 1024px) 100vw, 40vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-          <div className="absolute bottom-3 left-3 right-3 flex gap-2">
-            {galleryPhotos.slice(0, 3).map((photo, i) => (
-              <div key={i} className="relative h-14 w-14 overflow-hidden rounded-xl border-2 border-white/80 shadow-md">
-                <Image src={photo!.url} alt="" fill className="object-cover" sizes="56px" />
-              </div>
-            ))}
-          </div>
-          {seller.videos[0] && (
-            <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm">
-              <Play className="h-3.5 w-3.5 fill-white" />
-              {VIDEO_TYPE_LABELS[seller.videos[0].type]}
-            </div>
-          )}
-        </div>
-
-        {/* Profile info */}
-        <div className="flex flex-col justify-center p-6 lg:col-span-3 lg:p-8">
-          <div className="flex items-start gap-4">
-            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-4 border-warm-100 shadow-lg">
-              <Image src={seller.avatar} alt={seller.name} fill className="object-cover" sizes="80px" />
-            </div>
-            <div>
-              <span className="badge bg-lavender-100 text-lavender-700">{SELLER_TYPE_LABELS[seller.sellerType]}</span>
-              <div className="mt-2 flex items-center gap-2">
-                <h3 className="text-2xl font-bold text-warm-900 group-hover:text-brand-700">{seller.name}</h3>
-                {seller.verified && <Shield className="h-5 w-5 text-lavender-500" />}
-              </div>
-              <StarRating rating={seller.rating} reviewCount={seller.reviewCount} size="lg" className="mt-1" />
-              <SellerBadges badges={seller.badges} limit={3} className="mt-2" />
-              <p className="mt-1 flex items-center gap-1 text-sm text-warm-500">
-                <MapPin className="h-3.5 w-3.5" />
-                {seller.city}, IL
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <SellerAvailability seller={seller} />
-          </div>
-
-          <p className="mt-4 text-warm-700 leading-relaxed line-clamp-2">{seller.bio}</p>
-
-          <blockquote className="mt-4 border-l-4 border-sunflower-300 pl-4 text-sm italic text-warm-600">
-            &ldquo;{reviewSnippet}&rdquo;
-            <span className="mt-1 block text-xs not-italic text-warm-400">— Verified buyer</span>
-          </blockquote>
-
-          {mainProducts.length > 0 && (
-            <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-warm-500">What they offer</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {mainProducts.map((cat) => (
-                  <span key={cat} className="badge bg-warm-100 text-warm-700">{cat}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <span className="mt-5 text-sm font-semibold text-brand-700 group-hover:underline">
-            View full profile &amp; garden →
+  return (
+    <ul className="mt-1.5 space-y-0.5">
+      {highlights.map((p) => (
+        <li key={p.id} className="flex items-center justify-between gap-2 text-xs">
+          <span className="truncate font-medium text-warm-800">{p.title}</span>
+          <span className="shrink-0 text-[10px] font-semibold text-sage-700">
+            {formatProductFreshnessLine(p)}
           </span>
-        </div>
-      </Link>
-    );
-  }
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Dense baker profile row for homepage and listings */
+export default function GrowerProfileCard({ seller }: GrowerProfileCardProps) {
+  const { products } = useMarketplace();
+  const mainCategories = getMainProductCategories(products, seller.id, 3);
+  const cardImage = getSellerCardImage(seller);
+  const avatarSrc =
+    seller.sellerType === "Baker"
+      ? getBakerAvatarImage(seller.specialties, seller.id.charCodeAt(1) || 0)
+      : seller.avatar;
+  const availabilityLine = getSellerAvailabilityLine(seller);
 
   return (
     <Link
       href={`/sellers/${seller.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-warm-200/80 transition-all hover:shadow-lg hover:ring-lavender-200"
+      className="group flex gap-3 overflow-hidden rounded-xl bg-white p-2.5 shadow-sm ring-1 ring-warm-200/80 transition-all hover:shadow-md hover:ring-brand-200"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-warm-100">
+      <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg bg-warm-100 sm:h-[4.5rem] sm:w-24">
         <Image
-          src={seller.gardenPhotos[0]?.url || seller.greenhousePhotos[0]?.url || seller.flowerPhotos[0]?.url || seller.coverPhoto}
-          alt={`${seller.name}'s garden`}
+          src={cardImage}
+          alt={seller.name}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes="(max-width: 768px) 100vw, 33vw"
+          className="object-cover transition-transform group-hover:scale-105"
+          sizes="96px"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        {seller.videos[0] && (
-          <div className="absolute right-3 top-3 rounded-full bg-black/50 p-2 backdrop-blur-sm">
-            <Play className="h-4 w-4 fill-white text-white" />
-          </div>
-        )}
-        <div className="absolute bottom-3 left-3 flex items-end gap-3">
-          <div className="relative h-14 w-14 overflow-hidden rounded-full border-[3px] border-white shadow-lg">
-            <Image src={seller.avatar} alt={seller.name} fill className="object-cover" sizes="56px" />
-          </div>
-          <div>
-            <p className="font-bold text-white drop-shadow">{seller.name}</p>
-            <StarRating rating={seller.rating} reviewCount={seller.reviewCount} size="sm" className="text-white [&_span]:text-white/90" />
-          </div>
-        </div>
       </div>
-      <div className="flex flex-1 flex-col p-4">
-        <span className="badge w-fit bg-lavender-100 text-lavender-700">{SELLER_TYPE_LABELS[seller.sellerType]}</span>
-        <SellerBadges badges={seller.badges} limit={2} className="mt-2" />
-        <p className="mt-2 text-sm text-warm-600 line-clamp-2">{seller.tagline}</p>
-        <div className="mt-2">
-          <SellerAvailability seller={seller} compact />
-        </div>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {mainProducts.map((cat) => (
-            <span key={cat} className="rounded-full bg-warm-50 px-2 py-0.5 text-xs text-warm-600">{cat}</span>
-          ))}
-        </div>
-        <div className="mt-3 flex gap-1.5">
-          {[seller.gardenPhotos[0], seller.flowerPhotos[0], seller.greenhousePhotos[0]].filter(Boolean).map((p, i) => (
-            <div key={i} className="relative h-10 w-10 overflow-hidden rounded-lg ring-1 ring-warm-200">
-              <Image src={p!.url} alt="" fill className="object-cover" sizes="40px" />
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-start gap-2">
+            <div className="relative hidden h-9 w-9 shrink-0 overflow-hidden rounded-lg ring-1 ring-warm-100 sm:block">
+              <Image src={avatarSrc} alt="" fill className="object-cover" sizes="36px" />
             </div>
-          ))}
+            <div className="min-w-0">
+              <div className="flex items-center gap-1">
+                <h3 className="truncate text-sm font-bold text-warm-900 group-hover:text-brand-700">
+                  {seller.name}
+                </h3>
+                {seller.verified && <Shield className="h-3.5 w-3.5 shrink-0 text-lavender-500" />}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-warm-500">
+                <span>{SELLER_TYPE_LABELS[seller.sellerType]}</span>
+                <span className="flex items-center gap-0.5">
+                  <MapPin className="h-3 w-3" />
+                  {seller.city}
+                </span>
+                <StarRating rating={seller.rating} reviewCount={seller.reviewCount} size="sm" />
+              </div>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-warm-400 group-hover:text-brand-600" />
         </div>
+
+        {availabilityLine && (
+          <p className="mt-0.5 text-[11px] font-semibold text-sunflower-800">{availabilityLine}</p>
+        )}
+
+        {mainCategories.length > 0 && (
+          <p className="mt-0.5 truncate text-[11px] text-warm-600">{mainCategories.join(" · ")}</p>
+        )}
+
+        <ProductHighlights products={products} sellerId={seller.id} />
       </div>
     </Link>
   );

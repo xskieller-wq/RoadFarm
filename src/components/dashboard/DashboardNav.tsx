@@ -4,14 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, User, Clock, Package } from "lucide-react";
 
-const links = [
+const demoLinks = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/profile", label: "Profile & media", icon: User },
   { href: "/dashboard/availability", label: "Availability", icon: Clock },
   { href: "/dashboard/products", label: "Products", icon: Package },
 ];
 
-export default function DashboardNav() {
+const supabaseLinks = [
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard/templates", label: "Templates", icon: Package },
+];
+
+export default function DashboardNav({ supabaseMode = false }: { supabaseMode?: boolean }) {
+  const links = supabaseMode ? supabaseLinks : demoLinks;
   const pathname = usePathname();
 
   return (

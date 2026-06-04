@@ -23,10 +23,24 @@ import SellerAvailability from "@/components/sellers/SellerAvailability";
 import ProductVideoGallery from "@/components/products/ProductVideoGallery";
 import ReserveButton from "@/components/products/ReserveButton";
 import { COMPLIANCE_CATEGORIES, BUYER_DISCLAIMER } from "@/lib/types";
+import { getProductDisplayImage } from "@/data/images";
+import { foodPhotoClassName } from "@/lib/freshdrop/drop-image";
+import { usePhase1Product } from "@/lib/phase1/use-phase1-product";
+import Phase1ProductDetail from "./Phase1ProductDetail";
 
 export default function ProductDetailContent({ id }: { id: string }) {
+  const phase1 = usePhase1Product(id);
   const { getProductById, getSellerForProduct, hydrated } = useMarketplace();
   const product = getProductById(id);
+
+  if (phase1.enabled) {
+    if (phase1.loading) {
+      return <div className="p-8 text-center text-warm-600">Loading product…</div>;
+    }
+    if (phase1.product && phase1.seller) {
+      return <Phase1ProductDetail product={phase1.product} seller={phase1.seller} />;
+    }
+  }
 
   if (!hydrated) {
     return <div className="p-8 text-center text-warm-600">Loading product…</div>;
@@ -45,7 +59,7 @@ export default function ProductDetailContent({ id }: { id: string }) {
 
   const seller = getSellerForProduct(product);
   const needsDisclaimer = COMPLIANCE_CATEGORIES.includes(product.category);
-  const mainPhoto = product.photos[0]?.url;
+  const mainPhoto = getProductDisplayImage(product);
   const freshnessLabel = getProductFreshnessLabel(product);
   const availabilityLine = seller ? getSellerAvailabilityLine(seller) : null;
 
@@ -64,7 +78,7 @@ export default function ProductDetailContent({ id }: { id: string }) {
                 src={mainPhoto}
                 alt={product.title}
                 fill
-                className="object-cover"
+                className={foodPhotoClassName}
                 priority
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />

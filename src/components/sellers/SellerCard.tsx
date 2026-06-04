@@ -21,7 +21,7 @@ export default function SellerCard({ seller, variant = "default" }: SellerCardPr
     return (
       <Link
         href={`/sellers/${seller.id}`}
-        className="group flex items-center gap-3 rounded-2xl bg-white p-3 ring-1 ring-warm-200/80 transition-shadow hover:shadow-md hover:ring-lavender-200"
+        className="group flex items-center gap-3 rounded-2xl border border-warm-200/55 bg-white/92 p-3 shadow-sm ring-1 ring-warm-100/70 transition-shadow hover:shadow-md hover:ring-warm-300/50"
       >
         <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full ring-2 ring-warm-100">
           <Image src={seller.avatar} alt={seller.name} fill className="object-cover" sizes="56px" />
@@ -41,7 +41,7 @@ export default function SellerCard({ seller, variant = "default" }: SellerCardPr
   return (
     <Link
       href={`/sellers/${seller.id}`}
-      className="group block overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-warm-200/80 transition-all hover:shadow-lg hover:ring-lavender-200"
+      className="group block overflow-hidden rounded-2xl border border-warm-200/55 bg-white/92 shadow-md shadow-warm-950/5 ring-1 ring-warm-100/70 transition-all hover:shadow-lg hover:ring-warm-300/50"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-warm-100">
         <Image

@@ -6,8 +6,10 @@ import type {
   PickupHours,
 } from "@/lib/types";
 import { enrichSellerMedia } from "./seller-media";
-import { getProductImage } from "./images";
+import { getBakeryProductImage, getBakerAvatarImage, getBakerCoverImage, getProductImage } from "./images";
+import { isBakeryCategory } from "@/lib/categories";
 import { inferFreshnessLabel } from "@/lib/freshness";
+import { BAKERY_PRODUCT_SEEDS, FUTURE_SAMPLE_SEEDS } from "./bakery-seed";
 
 type RawSeller = Omit<
   Seller,
@@ -23,7 +25,18 @@ type RawSeller = Omit<
   | "weekdayPickup"
   | "weekendPickup"
 > &
-  Partial<Pick<Seller, "badges" | "featured" | "approvalStatus" | "availabilityStatus" | "weekdayPickup" | "weekendPickup">>;
+  Partial<
+    Pick<
+      Seller,
+      | "sellerType"
+      | "badges"
+      | "featured"
+      | "approvalStatus"
+      | "availabilityStatus"
+      | "weekdayPickup"
+      | "weekendPickup"
+    >
+  >;
 
 const defaultHours: PickupHours[] = [
   { day: "Monday", open: "8:00 AM", close: "6:00 PM" },
@@ -43,12 +56,12 @@ const weekendHours: PickupHours[] = [
 export const rawSellers: RawSeller[] = [
   {
     id: "s1",
-    name: "Green Valley Farm",
-    slug: "green-valley-farm",
-    tagline: "Farm-fresh eggs & vegetables since 2018",
-    bio: "Family-run urban farm in Norridge growing seasonal vegetables and free-range eggs. We believe in sustainable practices and community connection.",
-    avatar: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=200&h=200&fit=crop",
-    coverPhoto: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1200&h=400&fit=crop",
+    name: "Harbor Street Bakery",
+    slug: "harbor-street-bakery",
+    tagline: "Polish paczki & morning pastries",
+    bio: "Family bakery in Norridge known for traditional Polish paczki — separate from our neighbors' ring donuts. Fresh batches posted daily.",
+    avatar: getBakerAvatarImage(["Polish Paczki", "Pastries"], 0),
+    coverPhoto: getBakerCoverImage(["Polish Paczki", "Pastries"]),
     city: "Norridge",
     neighborhood: "Norridge",
     address: "4521 N Harlem Ave, Norridge, IL 60706",
@@ -60,17 +73,19 @@ export const rawSellers: RawSeller[] = [
     verified: true,
     pickupLocation: "4521 N Harlem Ave, Norridge",
     pickupHours: defaultHours,
-    specialties: ["Eggs", "Vegetables", "Herbs"],
+    specialties: ["Polish Paczki", "Pastries"],
+    sellerType: "Baker",
+    availabilityStatus: "available_now",
     requiresCompliance: false,
   },
   {
     id: "s2",
-    name: "Park Ridge Honey Co.",
-    slug: "park-ridge-honey-co",
-    tagline: "Raw local honey from backyard hives",
-    bio: "Small-batch raw honey harvested from our backyard hives in Park Ridge. Each jar tells the story of our neighborhood flowers.",
-    avatar: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=200&h=200&fit=crop",
-    coverPhoto: "https://images.unsplash.com/photo-1587049352846-4a222e784128?w=1200&h=400&fit=crop",
+    name: "Sunrise Ring Donuts",
+    slug: "sunrise-ring-donuts",
+    tagline: "Glazed rings & cake donuts every morning",
+    bio: "Neighborhood donut shop — classic ring donuts, not paczki. Batch alerts when the glaze is still warm.",
+    avatar: getBakerAvatarImage(["Donuts"], 1),
+    coverPhoto: getBakerCoverImage(["Donuts"]),
     city: "Park Ridge",
     neighborhood: "South Park Ridge",
     address: "823 Devon Ave, Park Ridge, IL 60068",
@@ -82,17 +97,19 @@ export const rawSellers: RawSeller[] = [
     verified: true,
     pickupLocation: "823 Devon Ave, Park Ridge",
     pickupHours: defaultHours,
-    specialties: ["Honey"],
+    specialties: ["Donuts"],
+    sellerType: "Baker",
+    availabilityStatus: "available_now",
     requiresCompliance: false,
   },
   {
     id: "s3",
-    name: "Des Plaines Orchard",
-    slug: "des-plaines-orchard",
-    tagline: "Seasonal fruits picked at peak ripeness",
-    bio: "Third-generation orchard family offering apples, berries, and stone fruits from our Des Plaines grove.",
-    avatar: "https://images.unsplash.com/photo-1464226184884-fa280b87c0d3?w=200&h=200&fit=crop",
-    coverPhoto: "https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=1200&h=400&fit=crop",
+    name: "Norridge Loaf House",
+    slug: "norridge-loaf-house",
+    tagline: "Sourdough, rye & dinner rolls",
+    bio: "Small bread bakery with early-morning pulls and same-day pickup windows.",
+    avatar: getBakerAvatarImage(["Bread"], 2),
+    coverPhoto: getBakerCoverImage(["Bread"]),
     city: "Des Plaines",
     neighborhood: "Downtown Des Plaines",
     address: "1200 Miner St, Des Plaines, IL 60016",
@@ -104,17 +121,19 @@ export const rawSellers: RawSeller[] = [
     verified: true,
     pickupLocation: "1200 Miner St, Des Plaines",
     pickupHours: defaultHours,
-    specialties: ["Fruits"],
+    specialties: ["Bread"],
+    sellerType: "Baker",
+    availabilityStatus: "available_today",
     requiresCompliance: false,
   },
   {
     id: "s4",
-    name: "Bloom & Petal Studio",
-    slug: "bloom-petal-studio",
-    tagline: "Handcrafted bouquets for every occasion",
-    bio: "Artisan florist creating custom bouquets from locally grown flowers. Wedding, birthday, and sympathy arrangements available.",
-    avatar: "https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=200&h=200&fit=crop",
-    coverPhoto: "https://images.unsplash.com/photo-1490750967868-88aa4486cfe2?w=1200&h=400&fit=crop",
+    name: "Celebration Crumb Cakes",
+    slug: "celebration-crumb-cakes",
+    tagline: "Custom cakes & celebration bakes",
+    bio: "Buttercream cakes and cupcakes with made-to-order celebration tiers.",
+    avatar: getBakerAvatarImage(["Cakes", "Cookies"], 3),
+    coverPhoto: getBakerCoverImage(["Cakes", "Cookies"]),
     city: "Park Ridge",
     neighborhood: "Uptown Park Ridge",
     address: "15 Main St, Park Ridge, IL 60068",
@@ -126,17 +145,19 @@ export const rawSellers: RawSeller[] = [
     verified: true,
     pickupLocation: "15 Main St, Park Ridge",
     pickupHours: defaultHours,
-    specialties: ["Bouquets", "Handmade Bouquets", "Roses"],
+    specialties: ["Cakes", "Cookies"],
+    sellerType: "Baker",
+    availabilityStatus: "available_today",
     requiresCompliance: false,
   },
   {
     id: "s5",
-    name: "Harwood Heights Gardens",
-    slug: "harwood-heights-gardens",
-    tagline: "Urban garden fresh produce daily",
-    bio: "Transforming backyards into productive gardens. We grow tomatoes, peppers, and herbs right here in Harwood Heights.",
-    avatar: "https://images.unsplash.com/photo-1595278069440-1cfd0aee00f8?w=200&h=200&fit=crop",
-    coverPhoto: "https://images.unsplash.com/photo-1530836369250-23972f791392?w=1200&h=400&fit=crop",
+    name: "Elm Park Pastry Kitchen",
+    slug: "elm-park-pastry-kitchen",
+    tagline: "Croissants, cookies & afternoon batches",
+    bio: "European-style pastries and cookie trays with lunch-hour fresh batch alerts.",
+    avatar: getBakerAvatarImage(["Pastries", "Cookies"], 4),
+    coverPhoto: getBakerCoverImage(["Pastries", "Cookies"]),
     city: "Harwood Heights",
     neighborhood: "Harwood Heights",
     address: "7100 W Lawrence Ave, Harwood Heights, IL 60706",
@@ -148,7 +169,9 @@ export const rawSellers: RawSeller[] = [
     verified: true,
     pickupLocation: "7100 W Lawrence Ave, Harwood Heights",
     pickupHours: defaultHours,
-    specialties: ["Vegetables", "Herbs"],
+    specialties: ["Pastries", "Cookies"],
+    sellerType: "Baker",
+    availabilityStatus: "available_now",
     requiresCompliance: false,
   },
   {
@@ -697,258 +720,26 @@ function generateProducts(): Product[] {
     });
   };
 
-  const freshnessOptions: FreshnessStatus[] = [
-    "Growing Now",
-    "Harvesting Today",
-    "Fresh Today",
-    "Available Now",
-    "Ready For Pickup",
-  ];
-
-  const productTemplates: Array<Omit<Product, "id" | "createdAt" | "sellerId" | "pickupLocation" | "pickupHours">> = [
-    // Green Valley Farm (s1)
-    { title: "Farm Fresh Dozen Eggs", category: "Eggs", description: "Free-range brown eggs from our heritage hens. Collected daily.", quantityAvailable: 24, price: 6.50, photos: [productPhoto("https://images.unsplash.com/photo-1518569656558-1ea25cd4a3ea?w=600&h=400&fit=crop", "product"), productPhoto("https://images.unsplash.com/photo-1548550025-2bdb7c5beae7?w=600&h=400&fit=crop", "farm")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 2, sold: false },
-    { title: "Heirloom Tomato Mix", category: "Vegetables", description: "Colorful mix of Cherokee Purple, Brandywine, and Green Zebra tomatoes.", quantityAvailable: 12, price: 8.00, photos: [productPhoto("https://images.unsplash.com/photo-1546470427-227765f1b45a?w=600&h=400&fit=crop", "product"), productPhoto("https://images.unsplash.com/photo-1530836369250-23972f791392?w=600&h=400&fit=crop", "garden")], videos: [], freshnessStatus: "Harvesting Today", estimatedDetourMinutes: 2, sold: false },
-    { title: "Fresh Basil Bundle", category: "Herbs", description: "Large bundle of sweet basil, perfect for pesto.", quantityAvailable: 8, price: 4.00, photos: [productPhoto("https://images.unsplash.com/photo-1618375569909-3c8616cf7733?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 2, sold: false },
-    { title: "Rainbow Chard Bunch", category: "Vegetables", description: "Vibrant Swiss chard with colorful stems.", quantityAvailable: 6, price: 3.50, photos: [productPhoto("https://images.unsplash.com/photo-1518977676604-b77154675468?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 3, sold: false },
-
-    // Park Ridge Honey Co. (s2)
-    { title: "Raw Wildflower Honey - 16oz", category: "Honey", description: "Unfiltered raw honey from local wildflowers.", quantityAvailable: 20, price: 14.00, photos: [productPhoto("https://images.unsplash.com/photo-1587049352846-4a222e784128?w=600&h=400&fit=crop", "product"), productPhoto("https://images.unsplash.com/photo-1558642452-9d2a7afff41b?w=600&h=400&fit=crop", "farm")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 4, sold: false },
-    { title: "Clover Honey - 8oz", category: "Honey", description: "Light and mild clover honey.", quantityAvailable: 15, price: 8.00, photos: [productPhoto("https://images.unsplash.com/photo-1587049352846-4a222e784128?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 4, sold: false },
-
-    // Des Plaines Orchard (s3)
-    { title: "Honeycrisp Apples - 3lb Bag", category: "Fruits", description: "Crisp and sweet Honeycrisp apples, just picked.", quantityAvailable: 18, price: 9.00, photos: [productPhoto("https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&h=400&fit=crop", "product"), productPhoto("https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=600&h=400&fit=crop", "harvest")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 5, sold: false },
-    { title: "Fresh Peaches - 2lb", category: "Fruits", description: "Tree-ripened peaches from our orchard.", quantityAvailable: 10, price: 7.50, photos: [productPhoto("https://images.unsplash.com/photo-1592419049799-abc123?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Harvesting Today", estimatedDetourMinutes: 5, sold: false },
-    { title: "Blueberry Pint", category: "Fruits", description: "Sweet organic blueberries.", quantityAvailable: 14, price: 6.00, photos: [productPhoto("https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 5, sold: false },
-
-    // Bloom & Petal Studio (s4)
-    { title: "Birthday Celebration Bouquet", category: "Handmade Bouquets", description: "Vibrant mixed bouquet perfect for birthdays.", quantityAvailable: 5, price: 45.00, photos: [productPhoto("https://images.unsplash.com/photo-1490750967868-88aa4486cfe2?w=600&h=400&fit=crop", "bouquet"), productPhoto("https://images.unsplash.com/photo-1496062031456-07b8f1621629?w=600&h=400&fit=crop", "previous_bouquet")], videos: [{ url: "#", caption: "Bouquet creation process", thumbnail: "https://images.unsplash.com/photo-1490750967868-88aa4486cfe2?w=600&h=400&fit=crop" }], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 3, sold: false, bouquetType: "birthday bouquets" },
-    { title: "Anniversary Rose Arrangement", category: "Bouquets", description: "Two dozen red roses in elegant arrangement.", quantityAvailable: 3, price: 65.00, photos: [productPhoto("https://images.unsplash.com/photo-1518895949257-7621f3c786d1?w=600&h=400&fit=crop", "bouquet")], videos: [], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 3, sold: false, bouquetType: "anniversary bouquets" },
-    { title: "Seasonal Wildflower Mix", category: "Fresh Flowers", description: "Fresh-cut seasonal wildflowers.", quantityAvailable: 8, price: 25.00, photos: [productPhoto("https://images.unsplash.com/photo-1462275646964-a0e33876f100?w=600&h=400&fit=crop", "flower_garden")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 3, sold: false },
-
-    // Harwood Heights Gardens (s5)
-    { title: "Cherry Tomatoes - Pint", category: "Vegetables", description: "Sweet cherry tomatoes, sun-warmed and ripe.", quantityAvailable: 16, price: 5.00, photos: [productPhoto("https://images.unsplash.com/photo-1592920308448-162c209c3570?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Harvesting Today", estimatedDetourMinutes: 1, sold: false },
-    { title: "Bell Pepper Mix", category: "Vegetables", description: "Red, yellow, and green bell peppers.", quantityAvailable: 10, price: 6.00, photos: [productPhoto("https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 1, sold: false },
-    { title: "Fresh Rosemary Bundle", category: "Herbs", description: "Aromatic rosemary sprigs.", quantityAvailable: 12, price: 3.00, photos: [productPhoto("https://images.unsplash.com/photo-1618375569909-3c8616cf7733?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 1, sold: false },
-
-    // Schiller Park Ferments (s6)
-    { title: "Classic Sauerkraut - 16oz", category: "Fermented Foods", description: "Traditional fermented cabbage with caraway seeds.", quantityAvailable: 20, price: 8.00, photos: [productPhoto("https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 6, sold: false },
-    { title: "Spicy Kimchi - 12oz", category: "Fermented Foods", description: "Authentic Korean-style kimchi with napa cabbage.", quantityAvailable: 15, price: 10.00, photos: [productPhoto("https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 6, sold: false },
-    { title: "Garlic Dill Pickles - Quart", category: "Pickled Foods", description: "Crunchy garlic dill pickles in brine.", quantityAvailable: 12, price: 9.00, photos: [productPhoto("https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 6, sold: false },
-
-    // Elmwood Park Flower Farm (s7)
-    { title: "Sunflower Bouquet - 6 Stems", category: "Sunflowers", description: "Bright yellow sunflowers, freshly cut.", quantityAvailable: 10, price: 18.00, photos: [productPhoto("https://images.unsplash.com/photo-1462275646964-a0e33876f100?w=600&h=400&fit=crop", "flower_garden"), productPhoto("https://images.unsplash.com/photo-1496062031456-07b8f1621629?w=600&h=400&fit=crop", "bouquet")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 4, sold: false },
-    { title: "Zinnia Mix - Bunch", category: "Cut Flowers", description: "Colorful zinnias in mixed colors.", quantityAvailable: 8, price: 12.00, photos: [productPhoto("https://images.unsplash.com/photo-1496062031456-07b8f1621629?w=600&h=400&fit=crop", "flower_garden")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 4, sold: false },
-    { title: "Seasonal Dahlia Stems", category: "Seasonal Flowers", description: "Premium dahlia stems in season.", quantityAvailable: 6, price: 15.00, photos: [productPhoto("https://images.unsplash.com/photo-1490750967868-88aa4486cfe2?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Harvesting Today", estimatedDetourMinutes: 4, sold: false },
-
-    // Norridge Egg Collective (s8)
-    { title: "Pasture-Raised Eggs - Dozen", category: "Eggs", description: "Large brown eggs from free-range hens.", quantityAvailable: 30, price: 7.00, photos: [productPhoto("https://images.unsplash.com/photo-1518569656558-1ea25cd4a3ea?w=600&h=400&fit=crop", "product"), productPhoto("https://images.unsplash.com/photo-1548550025-2bdb7c5beae7?w=600&h=400&fit=crop", "farm")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 2, sold: false },
-    { title: "Blue Ameraucana Eggs - Half Dozen", category: "Eggs", description: "Beautiful blue-green eggs from Ameraucana hens.", quantityAvailable: 12, price: 5.00, photos: [productPhoto("https://images.unsplash.com/photo-1518569656558-1ea25cd4a3ea?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 2, sold: false },
-
-    // Rose Garden Creations (s9)
-    { title: "Red Rose Dozen", category: "Roses", description: "Premium long-stem red roses.", quantityAvailable: 4, price: 35.00, photos: [productPhoto("https://images.unsplash.com/photo-1518895949257-7621f3c786d1?w=600&h=400&fit=crop", "product"), productPhoto("https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=600&h=400&fit=crop", "flower_garden")], videos: [], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 7, sold: false },
-    { title: "Wedding White Rose Bouquet", category: "Handmade Bouquets", description: "Elegant white roses for weddings.", quantityAvailable: 2, price: 85.00, photos: [productPhoto("https://images.unsplash.com/photo-1518895949257-7621f3c786d1?w=600&h=400&fit=crop", "bouquet")], videos: [{ url: "#", caption: "Wedding bouquet example", thumbnail: "https://images.unsplash.com/photo-1518895949257-7621f3c786d1?w=600&h=400&fit=crop" }], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 7, sold: false, bouquetType: "wedding bouquets" },
-    { title: "Pink Garden Roses - 6 Stems", category: "Roses", description: "Soft pink garden roses.", quantityAvailable: 6, price: 28.00, photos: [productPhoto("https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 7, sold: false },
-
-    // Pickle Perfect Kitchen (s10)
-    { title: "Bread & Butter Pickles", category: "Pickled Foods", description: "Sweet and tangy bread & butter pickles.", quantityAvailable: 18, price: 7.00, photos: [productPhoto("https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 5, sold: false },
-    { title: "Spicy Pickled Jalapeños", category: "Pickled Foods", description: "Hot pickled jalapeño slices.", quantityAvailable: 14, price: 6.00, photos: [productPhoto("https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 5, sold: false },
-    { title: "Pickled Beets - 12oz", category: "Pickled Foods", description: "Sweet pickled beets, family recipe.", quantityAvailable: 10, price: 8.00, photos: [productPhoto("https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 5, sold: false },
-
-    // Sunrise Herb Farm (s11)
-    { title: "Fresh Mint Bundle", category: "Herbs", description: "Spearmint perfect for tea and cocktails.", quantityAvailable: 15, price: 3.50, photos: [productPhoto("https://images.unsplash.com/photo-1618375569909-3c8616cf7733?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 5, sold: false },
-    { title: "Thyme & Oregano Bundle", category: "Herbs", description: "Mediterranean herbs bundle.", quantityAvailable: 10, price: 4.00, photos: [productPhoto("https://images.unsplash.com/photo-1466692476869-aef1dfb1e735?w=600&h=400&fit=crop", "garden")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 5, sold: false },
-    { title: "Live Basil Plant", category: "Herbs", description: "Potted sweet basil plant.", quantityAvailable: 8, price: 5.00, photos: [productPhoto("https://images.unsplash.com/photo-1618375569909-3c8616cf7733?w=600&h=400&fit=crop", "growing")], videos: [], freshnessStatus: "Growing Now", estimatedDetourMinutes: 5, sold: false },
-
-    // Meadow Lane Produce (s12)
-    { title: "Organic Salad Mix - 8oz", category: "Vegetables", description: "Mixed greens, ready to eat.", quantityAvailable: 20, price: 5.50, photos: [productPhoto("https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 3, sold: false },
-    { title: "Cucumber - 3 pack", category: "Vegetables", description: "Crisp organic cucumbers.", quantityAvailable: 12, price: 4.00, photos: [productPhoto("https://images.unsplash.com/photo-1604977042946-1f6b2a4b2b0b?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Harvesting Today", estimatedDetourMinutes: 3, sold: false },
-    { title: "Strawberry Pint", category: "Fruits", description: "Sweet organic strawberries.", quantityAvailable: 8, price: 6.50, photos: [productPhoto("https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 3, sold: false },
-
-    // Wildflower Workshop (s13)
-    { title: "Meadow Wildflower Bouquet", category: "Handmade Bouquets", description: "Natural wildflower arrangement.", quantityAvailable: 4, price: 38.00, photos: [productPhoto("https://images.unsplash.com/photo-1462275646964-a0e33876f100?w=600&h=400&fit=crop", "bouquet")], videos: [], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 2, sold: false, bouquetType: "seasonal bouquets" },
-    { title: "Sympathy White Lily Arrangement", category: "Bouquets", description: "Elegant white lilies for sympathy.", quantityAvailable: 3, price: 55.00, photos: [productPhoto("https://images.unsplash.com/photo-1490750967868-88aa4486cfe2?w=600&h=400&fit=crop", "bouquet")], videos: [], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 2, sold: false, bouquetType: "sympathy bouquets" },
-    { title: "Seasonal Foraged Mix", category: "Seasonal Flowers", description: "Locally foraged seasonal blooms.", quantityAvailable: 6, price: 22.00, photos: [productPhoto("https://images.unsplash.com/photo-1496062031456-07b8f1621629?w=600&h=400&fit=crop", "flower_garden")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 2, sold: false },
-
-    // Golden Hive Apiary (s14)
-    { title: "Wildflower Honey - 32oz", category: "Honey", description: "Large jar of raw wildflower honey.", quantityAvailable: 12, price: 22.00, photos: [productPhoto("https://images.unsplash.com/photo-1587049352846-4a222e784128?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 1, sold: false },
-    { title: "Honeycomb Square", category: "Honey", description: "Fresh honeycomb cut from the frame.", quantityAvailable: 6, price: 12.00, photos: [productPhoto("https://images.unsplash.com/photo-1558642452-9d2a7afff41b?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 1, sold: false },
-
-    // Des Plaines Veggie Patch (s15)
-    { title: "Microgreens Mix - 4oz", category: "Vegetables", description: "Nutrient-dense microgreens blend.", quantityAvailable: 25, price: 6.00, photos: [productPhoto("https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop", "product"), productPhoto("https://images.unsplash.com/photo-1530836369250-23972f791392?w=600&h=400&fit=crop", "growing")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 6, sold: false },
-    { title: "Heirloom Carrots - Bunch", category: "Vegetables", description: "Rainbow heirloom carrots.", quantityAvailable: 10, price: 4.50, photos: [productPhoto("https://images.unsplash.com/photo-1447175008436-1701707538-22?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Harvesting Today", estimatedDetourMinutes: 6, sold: false },
-
-    // Petals & Stems Florals (s16)
-    { title: "Daily Sunflower Bunch", category: "Sunflowers", description: "5 fresh sunflowers.", quantityAvailable: 12, price: 15.00, photos: [productPhoto("https://images.unsplash.com/photo-1462275646964-a0e33876f100?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 4, sold: false },
-    { title: "Mixed Cut Flower Bunch", category: "Cut Flowers", description: "Seasonal mixed cut flowers.", quantityAvailable: 8, price: 20.00, photos: [productPhoto("https://images.unsplash.com/photo-1496062031456-07b8f1621629?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 4, sold: false },
-
-    // Heritage Egg Farm (s17)
-    { title: "Heritage Brown Eggs - Dozen", category: "Eggs", description: "Dark brown Marans eggs.", quantityAvailable: 18, price: 8.00, photos: [productPhoto("https://images.unsplash.com/photo-1518569656558-1ea25cd4a3ea?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 8, sold: false },
-    { title: "Mixed Color Eggs - Dozen", category: "Eggs", description: "Assorted blue, brown, and green eggs.", quantityAvailable: 15, price: 9.00, photos: [productPhoto("https://images.unsplash.com/photo-1518569656558-1ea25cd4a3ea?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 8, sold: false },
-
-    // Kimchi & Kraut Co. (s18)
-    { title: "Traditional Kimchi - 16oz", category: "Fermented Foods", description: "Authentic napa cabbage kimchi.", quantityAvailable: 16, price: 11.00, photos: [productPhoto("https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 4, sold: false },
-    { title: "Garlic Sauerkraut", category: "Fermented Foods", description: "Garlic-infused fermented cabbage.", quantityAvailable: 12, price: 9.00, photos: [productPhoto("https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 4, sold: false },
-
-    // Berry Best Orchard (s19)
-    { title: "Strawberry Quart", category: "Fruits", description: "Sweet u-pick strawberries.", quantityAvailable: 20, price: 8.00, photos: [productPhoto("https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=600&h=400&fit=crop", "product"), productPhoto("https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=600&h=400&fit=crop", "harvest")], videos: [], freshnessStatus: "Harvesting Today", estimatedDetourMinutes: 7, sold: false },
-    { title: "Blueberry Quart", category: "Fruits", description: "Plump blueberries.", quantityAvailable: 15, price: 9.00, photos: [productPhoto("https://images.unsplash.com/photo-1498557850523-fd3d118b962e?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 7, sold: false },
-    { title: "Apple Variety Box - 5lb", category: "Fruits", description: "Mixed apple varieties.", quantityAvailable: 8, price: 12.00, photos: [productPhoto("https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 7, sold: false },
-
-    // Celebration Bouquets (s20)
-    { title: "Birthday Surprise Bouquet", category: "Bouquets", description: "Colorful birthday bouquet with balloon accent.", quantityAvailable: 5, price: 42.00, photos: [productPhoto("https://images.unsplash.com/photo-1490750967868-88aa4486cfe2?w=600&h=400&fit=crop", "bouquet"), productPhoto("https://images.unsplash.com/photo-1496062031456-07b8f1621629?w=600&h=400&fit=crop", "previous_bouquet")], videos: [], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 2, sold: false, bouquetType: "birthday bouquets" },
-    { title: "Wedding Centerpiece Arrangement", category: "Handmade Bouquets", description: "Elegant table centerpiece for weddings.", quantityAvailable: 2, price: 75.00, photos: [productPhoto("https://images.unsplash.com/photo-1518895949257-7621f3c786d1?w=600&h=400&fit=crop", "bouquet")], videos: [{ url: "#", caption: "Wedding setup", thumbnail: "https://images.unsplash.com/photo-1518895949257-7621f3c786d1?w=600&h=400&fit=crop" }], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 2, sold: false, bouquetType: "wedding bouquets" },
-
-    // Oak Street Micro Farm (s21)
-    { title: "Pea Shoots - 4oz", category: "Vegetables", description: "Fresh pea shoots for salads.", quantityAvailable: 20, price: 5.00, photos: [productPhoto("https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop", "growing")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 1, sold: false },
-    { title: "Arugula - 5oz", category: "Vegetables", description: "Peppery arugula greens.", quantityAvailable: 15, price: 4.50, photos: [productPhoto("https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 1, sold: false },
-
-    // Dill & Brine Picklery (s22)
-    { title: "Classic Dill Pickles - Pint", category: "Pickled Foods", description: "Traditional dill pickle spears.", quantityAvailable: 22, price: 6.50, photos: [productPhoto("https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 7, sold: false },
-    { title: "Pickled Asparagus", category: "Pickled Foods", description: "Crisp pickled asparagus spears.", quantityAvailable: 8, price: 9.00, photos: [productPhoto("https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 7, sold: false },
-
-    // Summer Sunflower Fields (s23)
-    { title: "Giant Sunflower - Single Stem", category: "Sunflowers", description: "Extra-large sunflower stem.", quantityAvailable: 15, price: 5.00, photos: [productPhoto("https://images.unsplash.com/photo-1462275646964-a0e33876f100?w=600&h=400&fit=crop", "flower_garden")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 5, sold: false },
-    { title: "Sunflower Bouquet - 12 Stems", category: "Bouquets", description: "Large sunflower bouquet.", quantityAvailable: 6, price: 35.00, photos: [productPhoto("https://images.unsplash.com/photo-1462275646964-a0e33876f100?w=600&h=400&fit=crop", "bouquet")], videos: [], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 5, sold: false, bouquetType: "seasonal bouquets" },
-    { title: "U-Pick Sunflower Experience", category: "Sunflowers", description: "Cut your own sunflowers from our field.", quantityAvailable: 50, price: 3.00, photos: [productPhoto("https://images.unsplash.com/photo-1462275646964-a0e33876f100?w=600&h=400&fit=crop", "flower_garden"), productPhoto("https://images.unsplash.com/photo-1496062031456-07b8f1621629?w=600&h=400&fit=crop", "farm")], videos: [{ url: "#", caption: "Sunflower field tour", thumbnail: "https://images.unsplash.com/photo-1462275646964-a0e33876f100?w=600&h=400&fit=crop" }], freshnessStatus: "Harvesting Today", estimatedDetourMinutes: 5, sold: false },
-
-    // Park Ridge Fruit Stand (s24)
-    { title: "Seasonal Fruit Box - Small", category: "Fruits", description: "Curated mix of in-season fruits.", quantityAvailable: 10, price: 15.00, photos: [productPhoto("https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 3, sold: false },
-    { title: "Bartlett Pears - 3lb", category: "Fruits", description: "Ripe Bartlett pears.", quantityAvailable: 8, price: 7.00, photos: [productPhoto("https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 3, sold: false },
-
-    // Fresh Herb Garden (s25)
-    { title: "Cilantro Bundle", category: "Herbs", description: "Fresh cilantro for cooking.", quantityAvailable: 18, price: 2.50, photos: [productPhoto("https://images.unsplash.com/photo-1618375569909-3c8616cf7733?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 6, sold: false },
-    { title: "Parsley - Flat Leaf", category: "Herbs", description: "Italian flat-leaf parsley.", quantityAvailable: 14, price: 2.50, photos: [productPhoto("https://images.unsplash.com/photo-1466692476869-aef1dfb1e735?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 6, sold: false },
-    { title: "Herb Starter Kit - 3 Plants", category: "Herbs", description: "Basil, rosemary, and thyme plants.", quantityAvailable: 6, price: 12.00, photos: [productPhoto("https://images.unsplash.com/photo-1466692476869-aef1dfb1e735?w=600&h=400&fit=crop", "growing")], videos: [], freshnessStatus: "Growing Now", estimatedDetourMinutes: 6, sold: false },
-
-    // Norridge Rose Garden (s26)
-    { title: "Garden Rose Stems - 6 pack", category: "Roses", description: "Mixed garden rose stems.", quantityAvailable: 8, price: 24.00, photos: [productPhoto("https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=600&h=400&fit=crop", "flower_garden")], videos: [], freshnessStatus: "Fresh Today", estimatedDetourMinutes: 2, sold: false },
-    { title: "Anniversary Rose Bouquet", category: "Handmade Bouquets", description: "Two-tone pink and white roses.", quantityAvailable: 3, price: 58.00, photos: [productPhoto("https://images.unsplash.com/photo-1518895949257-7621f3c786d1?w=600&h=400&fit=crop", "bouquet")], videos: [], freshnessStatus: "Ready For Pickup", estimatedDetourMinutes: 2, sold: false, bouquetType: "anniversary bouquets" },
-
-    // Community Kombucha (s27)
-    { title: "Classic Kombucha - 16oz", category: "Fermented Foods", description: "Original fermented tea.", quantityAvailable: 24, price: 5.00, photos: [productPhoto("https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 4, sold: false },
-    { title: "Ginger Lemon Kombucha", category: "Fermented Foods", description: "Zesty ginger and lemon flavor.", quantityAvailable: 18, price: 5.50, photos: [productPhoto("https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=400&fit=crop", "product")], videos: [], freshnessStatus: "Available Now", estimatedDetourMinutes: 4, sold: false },
-  ];
-
-  const sellerIds = [
-    "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10",
-    "s11", "s12", "s13", "s14", "s15", "s16", "s17", "s18", "s19", "s20",
-    "s21", "s22", "s23", "s24", "s25", "s26", "s27",
-  ];
-
-  let sellerIndex = 0;
-  for (const template of productTemplates) {
-    const seller = sellers.find((s) => s.id === sellerIds[sellerIndex])!;
+  for (const template of [...BAKERY_PRODUCT_SEEDS, ...FUTURE_SAMPLE_SEEDS]) {
+    const seller = sellers.find((s) => s.id === template.sellerId);
+    if (!seller) continue;
     addProduct({
       ...template,
-      sellerId: seller.id,
       pickupLocation: seller.pickupLocation,
       pickupHours: seller.pickupHours,
-    });
-    sellerIndex = (sellerIndex + 1) % sellerIds.length;
-  }
-
-  // Generate additional products to reach 100+
-  const extraProducts = [
-    { sellerId: "s1", title: "Organic Kale Bunch", category: "Vegetables" as ProductCategory, price: 4.00, detour: 2 },
-    { sellerId: "s1", title: "Free-Range Egg Half Dozen", category: "Eggs" as ProductCategory, price: 4.00, detour: 2 },
-    { sellerId: "s2", title: "Buckwheat Honey - 12oz", category: "Honey" as ProductCategory, price: 11.00, detour: 4 },
-    { sellerId: "s3", title: "Gala Apples - 3lb", category: "Fruits" as ProductCategory, price: 8.00, detour: 5 },
-    { sellerId: "s4", title: "Get Well Soon Bouquet", category: "Bouquets" as ProductCategory, price: 40.00, detour: 3 },
-    { sellerId: "s5", title: "Jalapeño Peppers - 6 pack", category: "Vegetables" as ProductCategory, price: 4.00, detour: 1 },
-    { sellerId: "s6", title: "Fermented Carrots - 8oz", category: "Fermented Foods" as ProductCategory, price: 7.00, detour: 6 },
-    { sellerId: "s7", title: "Cosmos Bunch", category: "Cut Flowers" as ProductCategory, price: 10.00, detour: 4 },
-    { sellerId: "s8", title: "Jumbo Eggs - Dozen", category: "Eggs" as ProductCategory, price: 8.00, detour: 2 },
-    { sellerId: "s9", title: "Yellow Rose Bouquet", category: "Bouquets" as ProductCategory, price: 32.00, detour: 7 },
-    { sellerId: "s10", title: "Sweet Pickle Relish - 8oz", category: "Pickled Foods" as ProductCategory, price: 5.00, detour: 5 },
-    { sellerId: "s11", title: "Sage Bundle", category: "Herbs" as ProductCategory, price: 3.00, detour: 5 },
-    { sellerId: "s12", title: "Spinach - 8oz", category: "Vegetables" as ProductCategory, price: 4.00, detour: 3 },
-    { sellerId: "s13", title: "Spring Tulip Bunch", category: "Seasonal Flowers" as ProductCategory, price: 18.00, detour: 2 },
-    { sellerId: "s14", title: "Honey Sticks - 5 pack", category: "Honey" as ProductCategory, price: 6.00, detour: 1 },
-    { sellerId: "s15", title: "Broccoli Crowns - 2 pack", category: "Vegetables" as ProductCategory, price: 5.00, detour: 6 },
-    { sellerId: "s16", title: "Dahlia Bouquet", category: "Bouquets" as ProductCategory, price: 28.00, detour: 4 },
-    { sellerId: "s17", title: "Organic Eggs - 18 count", category: "Eggs" as ProductCategory, price: 10.00, detour: 8 },
-    { sellerId: "s18", title: "Radish Kimchi", category: "Fermented Foods" as ProductCategory, price: 9.00, detour: 4 },
-    { sellerId: "s19", title: "Raspberry Pint", category: "Fruits" as ProductCategory, price: 7.00, detour: 7 },
-    { sellerId: "s20", title: "Graduation Bouquet", category: "Handmade Bouquets" as ProductCategory, price: 48.00, detour: 2 },
-    { sellerId: "s21", title: "Sunflower Microgreens", category: "Vegetables" as ProductCategory, price: 5.50, detour: 1 },
-    { sellerId: "s22", title: "Pickled Green Beans", category: "Pickled Foods" as ProductCategory, price: 7.50, detour: 7 },
-    { sellerId: "s23", title: "Mini Sunflower Bouquet", category: "Bouquets" as ProductCategory, price: 22.00, detour: 5 },
-    { sellerId: "s24", title: "Plum - 1lb", category: "Fruits" as ProductCategory, price: 5.00, detour: 3 },
-    { sellerId: "s25", title: "Dill Bundle", category: "Herbs" as ProductCategory, price: 2.00, detour: 6 },
-    { sellerId: "s26", title: "White Rose Stems - 6", category: "Roses" as ProductCategory, price: 26.00, detour: 2 },
-    { sellerId: "s27", title: "Hibiscus Kombucha", category: "Fermented Foods" as ProductCategory, price: 5.50, detour: 4 },
-    { sellerId: "s1", title: "Zucchini - 2 pack", category: "Vegetables" as ProductCategory, price: 3.00, detour: 2 },
-    { sellerId: "s2", title: "Orange Blossom Honey - 8oz", category: "Honey" as ProductCategory, price: 9.00, detour: 4 },
-    { sellerId: "s3", title: "Concord Grapes - 2lb", category: "Fruits" as ProductCategory, price: 8.50, detour: 5 },
-    { sellerId: "s4", title: "Sympathy Lily Arrangement", category: "Handmade Bouquets" as ProductCategory, price: 52.00, detour: 3 },
-    { sellerId: "s5", title: "Eggplant - Single", category: "Vegetables" as ProductCategory, price: 3.50, detour: 1 },
-    { sellerId: "s6", title: "Pickled Okra - 12oz", category: "Pickled Foods" as ProductCategory, price: 8.50, detour: 6 },
-    { sellerId: "s7", title: "Marigold Bunch", category: "Seasonal Flowers" as ProductCategory, price: 8.00, detour: 4 },
-    { sellerId: "s8", title: "Organic Eggs - Dozen", category: "Eggs" as ProductCategory, price: 7.50, detour: 2 },
-    { sellerId: "s9", title: "Peach Rose Bouquet", category: "Roses" as ProductCategory, price: 38.00, detour: 7 },
-    { sellerId: "s10", title: "Hot Pickled Carrots", category: "Pickled Foods" as ProductCategory, price: 7.00, detour: 5 },
-    { sellerId: "s11", title: "Chive Bundle", category: "Herbs" as ProductCategory, price: 2.50, detour: 5 },
-    { sellerId: "s12", title: "Butternut Squash", category: "Vegetables" as ProductCategory, price: 4.00, detour: 3 },
-    { sellerId: "s13", title: "Autumn Wildflower Mix", category: "Fresh Flowers" as ProductCategory, price: 20.00, detour: 2 },
-    { sellerId: "s14", title: "Acacia Honey - 16oz", category: "Honey" as ProductCategory, price: 16.00, detour: 1 },
-    { sellerId: "s15", title: "Kale Microgreens - 4oz", category: "Vegetables" as ProductCategory, price: 5.00, detour: 6 },
-    { sellerId: "s16", title: "Snapdragon Bunch", category: "Cut Flowers" as ProductCategory, price: 14.00, detour: 4 },
-    { sellerId: "s17", title: "Silkie Egg Half Dozen", category: "Eggs" as ProductCategory, price: 6.00, detour: 8 },
-    { sellerId: "s18", title: "Beet Kvass - 16oz", category: "Fermented Foods" as ProductCategory, price: 8.00, detour: 4 },
-    { sellerId: "s19", title: "Blackberry Pint", category: "Fruits" as ProductCategory, price: 8.00, detour: 7 },
-    { sellerId: "s20", title: "Seasonal Centerpiece", category: "Bouquets" as ProductCategory, price: 55.00, detour: 2 },
-    { sellerId: "s21", title: "Radish Microgreens", category: "Vegetables" as ProductCategory, price: 4.50, detour: 1 },
-    { sellerId: "s22", title: "Pickled Cauliflower", category: "Pickled Foods" as ProductCategory, price: 8.00, detour: 7 },
-    { sellerId: "s23", title: "Sunflower & Daisy Mix", category: "Cut Flowers" as ProductCategory, price: 16.00, detour: 5 },
-    { sellerId: "s24", title: "Nectarine - 2lb", category: "Fruits" as ProductCategory, price: 6.50, detour: 3 },
-    { sellerId: "s25", title: "Lemon Balm Bundle", category: "Herbs" as ProductCategory, price: 3.00, detour: 6 },
-    { sellerId: "s26", title: "Blush Rose Arrangement", category: "Roses" as ProductCategory, price: 42.00, detour: 2 },
-    { sellerId: "s27", title: "Ginger Turmeric Kombucha", category: "Fermented Foods" as ProductCategory, price: 6.00, detour: 4 },
-    { sellerId: "s4", title: "Wedding Bridesmaid Bouquet", category: "Handmade Bouquets" as ProductCategory, price: 68.00, detour: 3 },
-    { sellerId: "s7", title: "Fresh Peony Stems - 3", category: "Fresh Flowers" as ProductCategory, price: 24.00, detour: 4 },
-    { sellerId: "s13", title: "Dried Flower Bundle", category: "Seasonal Flowers" as ProductCategory, price: 15.00, detour: 2 },
-    { sellerId: "s20", title: "Baby Shower Bouquet", category: "Bouquets" as ProductCategory, price: 44.00, detour: 2 },
-    { sellerId: "s23", title: "Sunflower Wedding Bouquet", category: "Handmade Bouquets" as ProductCategory, price: 72.00, detour: 5 },
-    { sellerId: "s1", title: "Sourdough Loaf", category: "Herbs" as ProductCategory, price: 7.50, detour: 2, freshnessLabel: "Fresh Batch At 6 AM" as const },
-    { sellerId: "s6", title: "Glazed Donuts - 6 pack", category: "Herbs" as ProductCategory, price: 9.00, detour: 6, freshnessLabel: "Fresh Batch At 7 AM" as const },
-  ];
-
-  for (const extra of extraProducts) {
-    const seller = sellers.find((s) => s.id === extra.sellerId)!;
-    addProduct({
-      sellerId: extra.sellerId,
-      title: extra.title,
-      category: extra.category,
-      description: `Fresh ${extra.title.toLowerCase()} from ${seller.name}. Locally sourced and ready for pickup.`,
-      quantityAvailable: Math.floor(Math.random() * 15) + 5,
-      price: extra.price,
-      pickupLocation: seller.pickupLocation,
-      pickupHours: seller.pickupHours,
-      photos: [productPhoto(getProductImage(extra.category, extra.title), "product")],
-      videos: [],
-      freshnessStatus: "Ready For Pickup",
-      freshnessLabel: "freshnessLabel" in extra ? extra.freshnessLabel : undefined,
-      estimatedDetourMinutes: extra.detour,
-      sold: false,
+      freshnessLabel: template.freshnessLabel ?? inferFreshnessLabel(template as Product),
     });
   }
 
-  // Ensure every product has a valid category-appropriate photo + freshness label
   for (const p of products) {
-    const url = p.photos[0]?.url ?? "";
-    if (!url || url.includes("unsplash") || url.includes("abc123")) {
-      p.photos[0] = productPhoto(getProductImage(p.category, p.title), "product");
-    }
-    p.freshnessLabel = inferFreshnessLabel(p);
-    if (p.id.charCodeAt(1) % 5 === 0 && p.photos[0]?.url) {
-      p.videos = [
-        {
-          url: "#",
-          caption: `See how we prepare ${p.title.toLowerCase()}`,
-          thumbnail: p.photos[0].url,
-        },
-      ];
+    p.photos[0] = productPhoto(
+      isBakeryCategory(p.category)
+        ? getBakeryProductImage(p.category, p.title)
+        : getProductImage(p.category, p.title),
+      "product"
+    );
+    if (!p.freshnessLabel) {
+      p.freshnessLabel = inferFreshnessLabel(p);
     }
   }
 

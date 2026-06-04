@@ -1,14 +1,21 @@
-import type { Product, FreshnessLabel } from "@/lib/types";
+import type { Product, FreshnessLabel, ProductCategory } from "@/lib/types";
+import { isBakeryCategory } from "@/lib/categories";
 
 export type { FreshnessLabel };
 
-/** Buyer-facing freshness labels — separate from seller availability */
-export const FRESHNESS_LABEL_OPTIONS: FreshnessLabel[] = [
+export const BAKERY_FRESHNESS_LABEL_OPTIONS: FreshnessLabel[] = [
+  "Fresh Batch Time",
+  "Made Today",
+  "Made To Order",
+  "Available Now",
+  "Fresh Batch Alerts",
+];
+
+export const LEGACY_FRESHNESS_LABEL_OPTIONS: FreshnessLabel[] = [
   "Picked Today",
   "Picked After Order",
   "Cut Today",
   "Cut Before Pickup",
-  "Made To Order",
   "Collected Today",
   "Fresh Batch",
   "Fresh Batch At 6 AM",
@@ -18,29 +25,53 @@ export const FRESHNESS_LABEL_OPTIONS: FreshnessLabel[] = [
   "Growing Now",
 ];
 
+export const FRESHNESS_LABEL_OPTIONS: FreshnessLabel[] = [
+  ...BAKERY_FRESHNESS_LABEL_OPTIONS,
+  ...LEGACY_FRESHNESS_LABEL_OPTIONS,
+];
+
+export function getFreshnessOptionsForCategory(category: ProductCategory): FreshnessLabel[] {
+  return isBakeryCategory(category) ? BAKERY_FRESHNESS_LABEL_OPTIONS : FRESHNESS_LABEL_OPTIONS;
+}
+
+export function formatFreshnessDisplay(product: Product): string {
+  const label = getProductFreshnessLabel(product);
+  if (label === "Fresh Batch Time" && product.freshnessBatchTime) {
+    return `Fresh batch · ${product.freshnessBatchTime}`;
+  }
+  if (label === "Fresh Batch Alerts" || product.freshBatchAlerts) {
+    return product.freshBatchAlerts ? "Fresh batch alerts on" : "Fresh Batch Alerts";
+  }
+  return label;
+}
+
 export function inferFreshnessLabel(
   product: Pick<Product, "title" | "category" | "freshnessStatus" | "freshnessLabel">
 ): FreshnessLabel {
   if (product.freshnessLabel) return product.freshnessLabel;
 
+  if (isBakeryCategory(product.category)) {
+    const t = product.title.toLowerCase();
+    if (t.includes("paczki") || t.includes("fat tuesday") || t.includes("pre-order")) {
+      return "Made To Order";
+    }
+    if (t.includes("wedding") || t.includes("custom") || t.includes("celebration cake")) {
+      return "Made To Order";
+    }
+    if (product.freshnessStatus === "Available Now") return "Available Now";
+    if (t.includes("donut") || t.includes("croissant") || t.includes("muffin")) {
+      return "Fresh Batch Time";
+    }
+    if (t.includes("cookie") || t.includes("bread") || t.includes("loaf")) {
+      return "Made Today";
+    }
+    return "Made Today";
+  }
+
   const t = product.title.toLowerCase();
 
   if (t.includes("noon") || t.includes("lunch") || t.includes("midday")) {
     return "Fresh Batch At 12 PM";
-  }
-  if (t.includes("donut") || t.includes("muffin") || t.includes("pastry")) {
-    return "Fresh Batch At 7 AM";
-  }
-  if (
-    t.includes("bread") ||
-    t.includes("loaf") ||
-    t.includes("roll") ||
-    t.includes("bun") ||
-    t.includes("scone") ||
-    t.includes("bagel") ||
-    t.includes("croissant")
-  ) {
-    return "Fresh Batch At 6 AM";
   }
   if (product.category === "Honey" || t.includes("honey")) return "Fresh Batch";
   if (
@@ -68,8 +99,6 @@ export function inferFreshnessLabel(
     product.category === "Sunflowers" ||
     t.includes("flower") ||
     t.includes("sunflower") ||
-    t.includes("zinnia") ||
-    t.includes("dahlia") ||
     t.includes("rose")
   ) {
     return product.freshnessStatus === "Ready For Pickup" ? "Cut Before Pickup" : "Cut Today";

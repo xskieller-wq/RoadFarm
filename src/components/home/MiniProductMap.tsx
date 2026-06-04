@@ -17,9 +17,10 @@ export default function MiniProductMap() {
       products={mapProducts}
       sellers={approvedSellers}
       compact
+      embedded
       initialCategories={["all"]}
       ctaHref="/explore"
-      ctaLabel="Discover More Products Near You"
+      ctaLabel="Explore fresh bakery near you"
     />
   );
 }

@@ -1,108 +1,173 @@
 import type { ProductCategory } from "@/lib/types";
+import { isBakeryCategory, type BakeryCategory } from "@/lib/categories";
+import { resolveBakeryPhoto } from "@/lib/freshdrop/resolve-bakery-photo";
+import {
+  IMG,
+  BLOCKED_PEXELS_IDS,
+  BAKERY_PRODUCT_PEXELS_IDS,
+} from "@/data/pexels-img";
 
-/** Verified Pexels photography — balanced across gardens, produce, people, flowers */
-const p = (id: number, ext = "jpeg") =>
-  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.${ext}?auto=compress&cs=tinysrgb`;
+export { IMG, BLOCKED_PEXELS_IDS, BAKERY_PRODUCT_PEXELS_IDS };
 
-export const IMG = {
-  tomatoes: p(533280),
-  cherryTomatoes: p(1323737),
-  cucumber: p(4198017),
-  eggs: p(1622911),
-  honey: p(42062, "jpg"),
-  flowers: p(568027, "jpeg"),
-  bouquet: p(931162),
-  roses: p(568027, "jpeg"),
-  sunflowers: p(33044, "jpg"),
-  garden: p(2132227),
-  greenhouse: p(2255935),
-  farm: p(2255935),
-  vegetables: p(1300975),
-  herbs: p(143133),
-  orchard: p(1132040),
-  peaches: p(1458691),
-  apples: p(102104),
-  berries: p(89778),
-  strawberries: p(46174),
-  pickles: p(594988),
-  peppers: p(1407346),
-  salad: p(1128678),
-  carrots: p(143133),
-  harvest: p(2255935),
-  kombucha: p(594988),
-  /** Hero: vegetable garden / harvest — not flower-forward */
-  hero: p(1300975),
-  community: p(2132227),
-  baker: p(1775043),
-  beekeeper: p(42062, "jpg"),
-  bouquetMaking: p(931162),
-  personGarden: p(2256611),
-  personHarvest: p(3200075),
-  personFlorist: p(230325),
-  personEggs: p(2137026),
-  fruitTree: p(1132040),
-  avatars: [p(774909), p(1222271), p(1181686), p(1181519), p(91227), p(1239291)],
-  covers: {
-    garden: p(2132227),
-    flowers: p(568027, "jpeg"),
-    honey: p(42062, "jpg"),
-    orchard: p(1132040),
-    eggs: p(1622911),
-    farm: p(2255935),
-    pickles: p(594988),
-  },
-} as const;
+const BAKERY_AVATAR_POOL = [IMG.sourdough, IMG.rye, IMG.bread, IMG.cookies] as const;
+
+const BAKERY_IMG: Record<BakeryCategory, string> = {
+  "Polish Paczki": IMG.paczki,
+  Donuts: IMG.donuts,
+  Bread: IMG.bread,
+  Cakes: IMG.cake,
+  Pastries: IMG.pastries,
+  Cookies: IMG.cookies,
+};
 
 export function sized(url: string, w: number, h?: number): string {
   const sep = url.includes("?") ? "&" : "?";
   return h ? `${url}${sep}w=${w}&h=${h}&fit=crop` : `${url}${sep}w=${w}&fit=crop`;
 }
 
-export function sellerAvatar(index: number): string {
-  return sized(IMG.avatars[index % IMG.avatars.length], 200, 200);
+export function isBlockedPexelsUrl(url: string): boolean {
+  return BLOCKED_PEXELS_IDS.some((id) => url.includes(`/photos/${id}/`));
 }
 
-export function sellerCover(type: "garden" | "flowers" | "honey" | "orchard" | "eggs" | "farm" | "pickles"): string {
+export function isApprovedBakeryProductPexelsUrl(url: string): boolean {
+  const match = url.match(/\/photos\/(\d+)\//);
+  if (!match) return false;
+  return BAKERY_PRODUCT_PEXELS_IDS.has(Number(match[1]));
+}
+
+export function bakerySellerAvatar(seed: number): string {
+  return sized(BAKERY_AVATAR_POOL[Math.abs(seed) % BAKERY_AVATAR_POOL.length], 200, 200);
+}
+
+/** @deprecated Use bakerySellerAvatar or getBakerAvatarImage for bakers */
+export function sellerAvatar(index: number): string {
+  return bakerySellerAvatar(index);
+}
+
+export function sellerCover(
+  type: "bakery" | "paczki" | "donuts" | "garden" | "flowers" | "honey" | "orchard" | "eggs" | "farm" | "pickles"
+): string {
   return sized(IMG.covers[type], 1200, 400);
 }
 
-export function getProductImage(category: ProductCategory, title = ""): string {
+/** Title-aware photo — matches product type before generic category fallback */
+export function resolveProductPhoto(category: ProductCategory, title = ""): string {
   const t = title.toLowerCase();
-  if (t.includes("tomato")) return sized(IMG.tomatoes, 600, 400);
-  if (t.includes("cucumber")) return sized(IMG.cucumber, 600, 400);
-  if (t.includes("sunflower")) return sized(IMG.sunflowers, 600, 400);
-  if (t.includes("rose")) return sized(IMG.roses, 600, 400);
-  if (t.includes("peach")) return sized(IMG.peaches, 600, 400);
-  if (t.includes("apple")) return sized(IMG.apples, 600, 400);
-  if (t.includes("berry") || t.includes("strawberry")) return sized(IMG.berries, 600, 400);
-  if (t.includes("pickle") || t.includes("kimchi") || t.includes("sauerkraut")) return sized(IMG.pickles, 600, 400);
-  if (t.includes("kombucha") || t.includes("ferment") || t.includes("kvass")) return sized(IMG.kombucha, 600, 400);
-  if (t.includes("salad") || t.includes("microgreen") || t.includes("kale") || t.includes("spinach")) return sized(IMG.salad, 600, 400);
-  if (t.includes("carrot")) return sized(IMG.carrots, 600, 400);
-  if (t.includes("pepper") || t.includes("eggplant") || t.includes("zucchini") || t.includes("squash")) return sized(IMG.peppers, 600, 400);
-  if (t.includes("bread") || t.includes("bun") || t.includes("loaf") || t.includes("donut")) return sized(IMG.baker, 600, 400);
+
+  if (isBakeryCategory(category)) {
+    return resolveBakeryPhoto(category, title);
+  }
+
+  if (t.includes("tomato")) return IMG.tomatoes;
+  if (t.includes("cucumber")) return IMG.cucumber;
+  if (t.includes("sunflower")) return IMG.sunflowers;
+  if (
+    t.includes("rose") &&
+    !t.includes("paczki") &&
+    !t.includes("paczek") &&
+    (category === "Roses" ||
+      category === "Fresh Flowers" ||
+      category === "Cut Flowers" ||
+      category === "Seasonal Flowers")
+  ) {
+    return IMG.flowers;
+  }
+  if (t.includes("peach")) return IMG.peaches;
+  if (t.includes("apple") && !t.includes("paczki")) return IMG.apples;
+  if (t.includes("berry") || t.includes("strawberry")) return IMG.berries;
+  if (t.includes("pickle") || t.includes("kimchi") || t.includes("sauerkraut")) return IMG.pickles;
+  if (t.includes("mushroom")) return IMG.mushrooms;
+  if (t.includes("honey")) return IMG.honey;
+  if (t.includes("egg")) return IMG.eggs;
+  if (t.includes("jam") || t.includes("preserve")) return IMG.preserves;
+  if (t.includes("kombucha") || t.includes("drink") || t.includes("cider")) return IMG.drinks;
 
   switch (category) {
-    case "Eggs": return sized(IMG.eggs, 600, 400);
-    case "Honey": return sized(IMG.honey, 600, 400);
-    case "Vegetables": return sized(IMG.vegetables, 600, 400);
-    case "Herbs": return sized(IMG.herbs, 600, 400);
-    case "Fruits": return sized(IMG.apples, 600, 400);
+    case "Eggs":
+      return IMG.eggs;
+    case "Honey":
+      return IMG.honey;
+    case "Vegetables":
+      return IMG.vegetables;
+    case "Herbs":
+      return IMG.herbs;
+    case "Fruits":
+      return IMG.apples;
+    case "Mushrooms":
+      return IMG.mushrooms;
+    case "Preserves":
+      return IMG.preserves;
+    case "Homemade Drinks":
+      return IMG.drinks;
     case "Fresh Flowers":
     case "Cut Flowers":
     case "Seasonal Flowers":
     case "Roses":
-      return sized(IMG.flowers, 600, 400);
+      return IMG.flowers;
     case "Sunflowers":
-      return sized(IMG.sunflowers, 600, 400);
+      return IMG.sunflowers;
     case "Bouquets":
     case "Handmade Bouquets":
-      return sized(IMG.bouquet, 600, 400);
+      return IMG.bouquet;
     case "Pickled Foods":
-      return sized(IMG.pickles, 600, 400);
+      return IMG.pickles;
     case "Fermented Foods":
-      return sized(IMG.kombucha, 600, 400);
+      return IMG.kombucha;
     default:
-      return sized(IMG.vegetables, 600, 400);
+      return IMG.produce;
   }
+}
+
+export function getBakeryCategoryImage(category: ProductCategory): string {
+  if (isBakeryCategory(category)) {
+    return sized(BAKERY_IMG[category], 600, 400);
+  }
+  return sized(IMG.bread, 600, 400);
+}
+
+export function getBakeryProductImage(category: ProductCategory, title = ""): string {
+  const raw = resolveBakeryPhoto(category, title);
+  if (isBlockedPexelsUrl(raw) || !isApprovedBakeryProductPexelsUrl(raw)) {
+    return sized(IMG.croissant, 600, 400);
+  }
+  return sized(raw, 600, 400);
+}
+
+/** Bakery seller avatar — product closeups only */
+export function getBakerAvatarImage(specialties: ProductCategory[], index = 0): string {
+  if (specialties.includes("Polish Paczki")) return sized(IMG.paczki, 200, 200);
+  if (specialties.includes("Bread")) return sized(IMG.sourdough, 200, 200);
+  if (specialties.includes("Pastries")) return sized(IMG.croissant, 200, 200);
+  if (specialties.includes("Donuts")) return sized(IMG.donuts, 200, 200);
+  if (specialties.includes("Cakes")) return sized(IMG.cake, 200, 200);
+  if (specialties.includes("Cookies")) return sized(IMG.cookies, 200, 200);
+  return bakerySellerAvatar(index);
+}
+
+export function getBakerCoverImage(specialties: ProductCategory[]): string {
+  if (specialties.includes("Polish Paczki")) return sellerCover("paczki");
+  if (specialties.includes("Donuts")) return sellerCover("donuts");
+  return sellerCover("bakery");
+}
+
+export function getProductDisplayImage(product: {
+  category: ProductCategory;
+  title: string;
+  photos?: { url: string }[];
+}): string {
+  return getProductImage(product.category, product.title);
+}
+
+export function getBakeryCategoryTileImage(category: BakeryCategory): string {
+  return sized(BAKERY_IMG[category], 800, 1000);
+}
+
+export function getProductImage(category: ProductCategory, title = ""): string {
+  return sized(resolveProductPhoto(category, title), 600, 400);
+}
+
+/** Blurred food-only backdrop for homepage zones */
+export function bakeryZoneBackdrop(zone: "top" | "mid"): string {
+  const src = zone === "mid" ? IMG.bakeryBackdropAlt : IMG.bakeryBackdrop;
+  return sized(src, 900, 600);
 }

@@ -9,7 +9,7 @@ import ProductMapPin from "./ProductMapPin";
 import MapCanvasBackground from "./MapCanvasBackground";
 import RouteSearchForm from "@/components/search/RouteSearchForm";
 import ProductCard from "@/components/products/ProductCard";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import {
   MINI_MAP_CATEGORIES,
   type MiniMapCategory,
@@ -28,6 +28,8 @@ interface ProductDiscoveryMapProps {
   initialCategories?: MiniMapCategory[];
   ctaHref?: string;
   ctaLabel?: string;
+  /** Homepage: translucent panel over bakery backdrop (no large white block) */
+  embedded?: boolean;
 }
 
 export default function ProductDiscoveryMap({
@@ -39,6 +41,7 @@ export default function ProductDiscoveryMap({
   initialCategories = ["all"],
   ctaHref,
   ctaLabel,
+  embedded = false,
 }: ProductDiscoveryMapProps) {
   const [activeCategories, setActiveCategories] = useState<Set<MiniMapCategory>>(
     new Set(initialCategories)
@@ -109,12 +112,26 @@ export default function ProductDiscoveryMap({
     .map((c) => c.label.toLowerCase())
     .join(", ");
 
+  const shellClass = embedded
+    ? "overflow-hidden rounded-3xl bg-warm-950/50 shadow-xl ring-1 ring-white/20 backdrop-blur-md"
+    : "overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-warm-200/80";
+
+  const filterPanelClass = embedded
+    ? `border-white/10 bg-warm-950/35 p-5 ${compact ? "border-b lg:border-b-0" : "lg:border-r"}`
+    : `border-warm-100 bg-sage-50/80 p-5 ${compact ? "border-b lg:border-b-0" : "lg:border-r"}`;
+
+  const filterTitleClass = embedded ? "text-amber-200/90" : "text-sage-700";
+  const filterLabelChecked = embedded ? "bg-white/15 ring-1 ring-amber-300/40" : "bg-white shadow-sm ring-1 ring-brand-200";
+  const filterLabelHover = embedded ? "hover:bg-white/10" : "hover:bg-white/70";
+  const filterTextChecked = embedded ? "text-white" : "text-warm-900";
+  const filterTextMuted = embedded ? "text-white/70" : "text-warm-600";
+
   return (
-    <div className="overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-warm-200/80">
+    <div className={shellClass}>
       <div className={`grid ${compact ? "" : "lg:grid-cols-[272px_1fr]"}`}>
         {/* Filters */}
-        <div className={`border-warm-100 bg-sage-50/80 p-5 ${compact ? "border-b lg:border-b-0" : "lg:border-r"}`}>
-          <p className="text-xs font-semibold uppercase tracking-wider text-sage-700">
+        <div className={filterPanelClass}>
+          <p className={`text-xs font-semibold uppercase tracking-wider ${filterTitleClass}`}>
             Filter products
           </p>
           <div className={`mt-3 space-y-1 ${compact ? "max-h-48 overflow-y-auto pr-1" : "max-h-[min(520px,70vh)] overflow-y-auto pr-1"}`}>
@@ -124,7 +141,7 @@ export default function ProductDiscoveryMap({
                 <label
                   key={cat.id}
                   className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
-                    checked ? "bg-white shadow-sm ring-1 ring-brand-200" : "hover:bg-white/70"
+                    checked ? filterLabelChecked : filterLabelHover
                   }`}
                 >
                   <input
@@ -134,7 +151,7 @@ export default function ProductDiscoveryMap({
                     className="h-4 w-4 rounded border-warm-300 text-brand-600 focus:ring-brand-500"
                   />
                   <span className="text-base leading-none">{cat.emoji}</span>
-                  <span className={`text-sm font-medium ${checked ? "text-warm-900" : "text-warm-600"}`}>
+                  <span className={`text-sm font-medium ${checked ? filterTextChecked : filterTextMuted}`}>
                     {cat.label}
                   </span>
                 </label>
@@ -168,7 +185,11 @@ export default function ProductDiscoveryMap({
           className={`relative ${compact ? "min-h-[320px] sm:min-h-[380px]" : "min-h-[420px] sm:min-h-[520px]"}`}
           onClick={() => setSelectedProductId(null)}
         >
-          <MapCanvasBackground />
+          {embedded ? (
+            <div className="absolute inset-0 bg-gradient-to-br from-warm-900/70 via-warm-950/50 to-amber-950/40" />
+          ) : (
+            <MapCanvasBackground />
+          )}
 
           {visibleProducts.map((product, i) => {
             const seller = sellerMap.get(product.sellerId);
@@ -229,14 +250,22 @@ export default function ProductDiscoveryMap({
       </div>
 
       {ctaHref && ctaLabel && (
-        <div className="border-t border-warm-100 bg-white px-6 py-5 text-center">
+        <div
+          className={
+            embedded
+              ? "border-t border-white/10 bg-warm-950/45 px-6 py-5 text-center"
+              : "border-t border-warm-100 bg-white px-6 py-5 text-center"
+          }
+        >
           <Link
             href={ctaHref}
             className="inline-flex w-full items-center justify-center rounded-2xl bg-brand-600 px-8 py-4 text-base font-bold text-white shadow-lg hover:bg-brand-700 sm:w-auto sm:min-w-[320px]"
           >
             {ctaLabel}
           </Link>
-          <p className="mt-2 text-xs text-warm-500">Tap a product pin to see who grows it</p>
+          <p className={cn("mt-2 text-xs", embedded ? "text-white/50" : "text-warm-500")}>
+            Tap a product pin to see who grows it
+          </p>
         </div>
       )}
 

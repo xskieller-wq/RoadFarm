@@ -1,6 +1,13 @@
 import type { Seller, SellerPhoto, SellerVideo, SellerType, ProductCategory } from "@/lib/types";
 import { inferSellerBadges } from "@/data/badges";
-import { IMG, sellerAvatar, sellerCover, sized } from "@/data/images";
+import {
+  IMG,
+  getBakerAvatarImage,
+  getBakerCoverImage,
+  isBlockedPexelsUrl,
+  sellerCover,
+  sized,
+} from "@/data/images";
 
 function photo(url: string, type: SellerPhoto["type"], caption: string): SellerPhoto {
   return { url: sized(url, 800, 600), type, caption };
@@ -15,7 +22,17 @@ function video(
   return { url: "#", type, caption, thumbnail: sized(thumbnail, 800, 450), duration };
 }
 
+const BAKERY_SPECIALTIES: ProductCategory[] = [
+  "Polish Paczki",
+  "Donuts",
+  "Bread",
+  "Cakes",
+  "Pastries",
+  "Cookies",
+];
+
 function inferSellerType(specialties: ProductCategory[]): SellerType {
+  if (specialties.some((s) => BAKERY_SPECIALTIES.includes(s))) return "Baker";
   const flower = ["Fresh Flowers", "Roses", "Sunflowers", "Seasonal Flowers", "Cut Flowers", "Bouquets", "Handmade Bouquets"];
   if (specialties.some((s) => flower.includes(s))) {
     return specialties.includes("Bouquets") || specialties.includes("Handmade Bouquets")
@@ -30,6 +47,10 @@ function inferSellerType(specialties: ProductCategory[]): SellerType {
 
 function pickCover(sellerType: SellerType, specialties: ProductCategory[]): string {
   switch (sellerType) {
+    case "Baker":
+      if (specialties.includes("Polish Paczki")) return sellerCover("paczki");
+      if (specialties.includes("Donuts")) return sellerCover("donuts");
+      return sellerCover("bakery");
     case "Florist":
     case "Flower Grower":
       return sellerCover("flowers");
@@ -49,15 +70,22 @@ export function enrichSellerMedia(
   index = 0
 ): Seller {
   const sellerType = seller.sellerType ?? inferSellerType(seller.specialties);
+  const isBaker = sellerType === "Baker";
   const isFlower = ["Florist", "Flower Grower"].includes(sellerType);
   const isGarden = ["Gardener", "Small Producer", "Orchard Grower"].includes(sellerType);
   const isBee = sellerType === "Beekeeper";
 
-  const gardenPhotos: SellerPhoto[] = seller.gardenPhotos ?? [
-    photo(IMG.garden, "garden", "Our backyard garden"),
-    photo(IMG.vegetables, "garden", "Seasonal vegetable beds"),
-    photo(IMG.harvest, "harvest", "Fresh from the garden"),
-  ];
+  const gardenPhotos: SellerPhoto[] = seller.gardenPhotos ?? (isBaker
+    ? [
+        photo(IMG.sourdough, "garden", "Fresh sourdough on the counter"),
+        photo(IMG.bread, "garden", "Loaves on wooden board"),
+        photo(IMG.croissant, "garden", "Morning pastry tray"),
+      ]
+    : [
+        photo(IMG.garden, "garden", "Our backyard garden"),
+        photo(IMG.vegetables, "garden", "Seasonal vegetable beds"),
+        photo(IMG.harvest, "harvest", "Fresh from the garden"),
+      ]);
 
   const flowerPhotos: SellerPhoto[] = seller.flowerPhotos ?? (isFlower
     ? [
@@ -69,12 +97,24 @@ export function enrichSellerMedia(
       ? [photo(IMG.flowers, "flower", "Companion flowers in the garden")]
       : []);
 
-  const greenhousePhotos: SellerPhoto[] = seller.greenhousePhotos ?? [
-    photo(IMG.greenhouse, "greenhouse", "Greenhouse growing space"),
-    photo(isBee ? IMG.honey : IMG.garden, "greenhouse", isBee ? "Hive area" : "Seedling trays"),
-  ];
+  const greenhousePhotos: SellerPhoto[] = seller.greenhousePhotos ?? (isBaker
+    ? [
+        photo(IMG.rye, "greenhouse", "Rye loaves"),
+        photo(IMG.cookies, "greenhouse", "Cookie trays"),
+        photo(IMG.paczki, "greenhouse", "Paczki batch"),
+      ]
+    : [
+        photo(IMG.greenhouse, "greenhouse", "Greenhouse growing space"),
+        photo(isBee ? IMG.honey : IMG.garden, "greenhouse", isBee ? "Hive area" : "Seedling trays"),
+      ]);
 
   const videos: SellerVideo[] = seller.videos ?? [
+    ...(isBaker
+      ? [
+          video("harvest_footage", "Fresh batch from the oven", IMG.bread, "0:55"),
+          video("bouquet_showcase", "Pastry case showcase", IMG.croissant, "0:42"),
+        ]
+      : []),
     ...(isFlower
       ? [
           video("flowers_growing", "Flowers growing in our garden", IMG.flowers),
@@ -95,8 +135,14 @@ export function enrichSellerMedia(
   const enriched: Seller = {
     ...seller,
     sellerType,
-    avatar: sellerAvatar(index),
-    coverPhoto: pickCover(sellerType, seller.specialties),
+    avatar: isBaker
+      ? seller.avatar && !isBlockedPexelsUrl(seller.avatar)
+        ? seller.avatar
+        : getBakerAvatarImage(seller.specialties, index)
+      : seller.avatar && !isBlockedPexelsUrl(seller.avatar)
+        ? seller.avatar
+        : getBakerAvatarImage([], index),
+    coverPhoto: isBaker ? getBakerCoverImage(seller.specialties) : (seller.coverPhoto ?? pickCover(sellerType, seller.specialties)),
     gardenPhotos,
     flowerPhotos,
     greenhousePhotos,
@@ -127,6 +173,7 @@ export function enrichSellerMedia(
 }
 
 export const SELLER_TYPE_LABELS: Record<SellerType, string> = {
+  Baker: "Neighborhood Baker",
   Gardener: "Local Gardener",
   "Flower Grower": "Flower Grower",
   Beekeeper: "Beekeeper",

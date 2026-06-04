@@ -11,7 +11,7 @@ import {
   getProductMiniMapCategory,
 } from "@/lib/product-map-utils";
 import StarRating from "@/components/ui/StarRating";
-import { getProductImage } from "@/data/images";
+import { getProductDisplayImage } from "@/data/images";
 import { getProductFreshnessLabel } from "@/lib/freshness";
 import {
   getSellerAvailabilityLine,
@@ -37,7 +37,7 @@ export default function ProductMapPin({
 }: ProductMapPinProps) {
   const category = getProductMiniMapCategory(product);
   const emoji = category && category !== "all" ? getCategoryEmoji(category) : "🛒";
-  const productPhoto = product.photos[0]?.url ?? getProductImage(product.category, product.title);
+  const productPhoto = getProductDisplayImage(product);
   const distance = formatProductDistance(product.estimatedDetourMinutes);
   const freshnessLabel = getProductFreshnessLabel(product);
   const availabilityLine = getSellerAvailabilityLine(seller);

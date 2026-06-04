@@ -1,8 +1,50 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Sprout } from "lucide-react";
 import { ROUTEFARM_AREAS } from "@/data/routefarm-structure";
+import {
+  isFreshDropBuyerSurface,
+  normalizeBuyerPathname,
+} from "@/lib/freshdrop/buyer-surfaces";
 
 export default function Footer() {
+  const pathname = normalizeBuyerPathname(usePathname());
+
+  if (isFreshDropBuyerSurface(pathname)) {
+    return (
+      <footer className="relative z-10 border-t border-white/10 bg-warm-950/90">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-8 text-center sm:px-6 lg:px-8">
+          <p className="text-sm font-semibold text-white">
+            Fresh<span className="text-amber-300">Drop</span>
+          </p>
+          <p className="max-w-md text-xs text-white/70">
+            Today&apos;s fresh bakery drops near you — reserve pickup and get batch alerts from neighborhood
+            bakers.
+          </p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-medium text-white/80">
+            <Link href="/browse" className="hover:text-amber-200">
+              Browse
+            </Link>
+            <Link href="/explore" className="hover:text-amber-200">
+              Map
+            </Link>
+            <Link href="/buy/alerts" className="hover:text-amber-200">
+              Alerts
+            </Link>
+            <Link href="/signup" className="hover:text-amber-200">
+              Sign up
+            </Link>
+          </nav>
+          <p className="text-xs text-white/50">
+            &copy; {new Date().getFullYear()} FreshDrop
+          </p>
+        </div>
+      </footer>
+    );
+  }
+
   const buy = ROUTEFARM_AREAS.buyers;
   const sell = ROUTEFARM_AREAS.sellers;
   const grow = ROUTEFARM_AREAS.growMore;

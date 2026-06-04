@@ -4,6 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Shield, ChevronLeft } from "lucide-react";
 import { useMarketplace } from "@/context/MarketplaceContext";
+import { useSellerProfile } from "@/lib/phase1/use-seller-profile";
+import Phase1SellerProfile from "./Phase1SellerProfile";
 import { SELLER_TYPE_LABELS } from "@/data/seller-media";
 import type { PickupHours } from "@/lib/types";
 import ProductCard from "@/components/products/ProductCard";
@@ -13,7 +15,18 @@ import SellerAvailability from "@/components/sellers/SellerAvailability";
 import { SellerPhotoGallery, SellerVideoGallery } from "@/components/sellers/SellerMediaGallery";
 
 export default function SellerProfileContent({ id }: { id: string }) {
+  const phase1 = useSellerProfile(id);
   const { getSellerById, getProductsBySellerId } = useMarketplace();
+
+  if (phase1.enabled) {
+    if (phase1.loading) {
+      return <p className="p-8 text-center text-warm-600">Loading seller…</p>;
+    }
+    if (phase1.seller) {
+      return <Phase1SellerProfile seller={phase1.seller} products={phase1.products} />;
+    }
+  }
+
   const seller = getSellerById(id);
 
   if (!seller) {

@@ -1,55 +1,37 @@
 import type { Product, Seller } from "@/lib/types";
+import { isBakeryCategory } from "@/lib/categories";
 
 export type MiniMapCategory =
   | "all"
-  | "tomatoes"
-  | "cucumbers"
-  | "peppers"
-  | "lettuce"
-  | "potatoes"
-  | "carrots"
-  | "garlic"
-  | "onions"
-  | "herbs"
-  | "strawberries"
-  | "blueberries"
-  | "apples"
+  | "paczki"
+  | "donuts"
+  | "bread"
+  | "cakes"
+  | "pastries"
+  | "cookies"
   | "eggs"
   | "honey"
   | "flowers"
-  | "bouquets"
-  | "seedlings"
-  | "baked_goods"
-  | "pickled"
-  | "preserves"
-  | "fruit";
+  | "produce"
+  | "pickled";
 
 export const MINI_MAP_CATEGORIES: {
   id: MiniMapCategory;
   label: string;
   emoji: string;
 }[] = [
-  { id: "all", label: "All Products", emoji: "📦" },
-  { id: "tomatoes", label: "Tomatoes", emoji: "🍅" },
-  { id: "cucumbers", label: "Cucumbers", emoji: "🥒" },
-  { id: "peppers", label: "Peppers", emoji: "🌶️" },
-  { id: "lettuce", label: "Lettuce", emoji: "🥬" },
-  { id: "potatoes", label: "Potatoes", emoji: "🥔" },
-  { id: "carrots", label: "Carrots", emoji: "🥕" },
-  { id: "garlic", label: "Garlic", emoji: "🧄" },
-  { id: "onions", label: "Onions", emoji: "🧅" },
-  { id: "herbs", label: "Herbs", emoji: "🌿" },
-  { id: "strawberries", label: "Strawberries", emoji: "🍓" },
-  { id: "blueberries", label: "Blueberries", emoji: "🫐" },
-  { id: "apples", label: "Apples", emoji: "🍎" },
+  { id: "all", label: "All Bakery", emoji: "🥐" },
+  { id: "paczki", label: "Polish Paczki", emoji: "🥮" },
+  { id: "donuts", label: "Donuts", emoji: "🍩" },
+  { id: "bread", label: "Bread", emoji: "🍞" },
+  { id: "cakes", label: "Cakes", emoji: "🎂" },
+  { id: "pastries", label: "Pastries", emoji: "🥐" },
+  { id: "cookies", label: "Cookies", emoji: "🍪" },
   { id: "eggs", label: "Eggs", emoji: "🥚" },
   { id: "honey", label: "Honey", emoji: "🍯" },
-  { id: "flowers", label: "Flowers", emoji: "🌻" },
-  { id: "bouquets", label: "Bouquets", emoji: "💐" },
-  { id: "seedlings", label: "Seedlings", emoji: "🌱" },
-  { id: "baked_goods", label: "Baked Goods", emoji: "🥖" },
-  { id: "pickled", label: "Pickled Foods", emoji: "🥒" },
-  { id: "preserves", label: "Preserves", emoji: "🍯" },
+  { id: "flowers", label: "Flowers", emoji: "💐" },
+  { id: "produce", label: "Produce", emoji: "🥬" },
+  { id: "pickled", label: "Pickled", emoji: "🥒" },
 ];
 
 const FLOWER_CATEGORIES = new Set([
@@ -58,49 +40,33 @@ const FLOWER_CATEGORIES = new Set([
   "Cut Flowers",
   "Seasonal Flowers",
   "Roses",
+  "Bouquets",
+  "Handmade Bouquets",
 ]);
 
-const BOUQUET_CATEGORIES = new Set(["Bouquets", "Handmade Bouquets"]);
-
-function matches(title: string, ...words: string[]): boolean {
-  return words.some((w) => title.includes(w));
-}
+const PRODUCE_CATEGORIES = new Set(["Vegetables", "Fruits", "Herbs", "Mushrooms"]);
 
 export function getProductMiniMapCategory(product: Product): MiniMapCategory | null {
-  const title = product.title.toLowerCase();
+  if (product.category === "Polish Paczki") return "paczki";
+  if (product.category === "Donuts") return "donuts";
+  if (product.category === "Bread") return "bread";
+  if (product.category === "Cakes") return "cakes";
+  if (product.category === "Pastries") return "pastries";
+  if (product.category === "Cookies") return "cookies";
 
-  if (product.category === "Eggs" || matches(title, "egg")) return "eggs";
-  if (product.category === "Honey" || matches(title, "honey")) return "honey";
-  if (BOUQUET_CATEGORIES.has(product.category) || matches(title, "bouquet")) return "bouquets";
-  if (FLOWER_CATEGORIES.has(product.category) || matches(title, "flower", "rose", "sunflower", "zinnia", "dahlia", "lily")) {
-    return "flowers";
-  }
-  if (product.category === "Pickled Foods" || matches(title, "pickle", "kimchi", "sauerkraut", "jalapeño")) {
+  if (isBakeryCategory(product.category)) return null;
+
+  if (product.category === "Eggs") return "eggs";
+  if (product.category === "Honey") return "honey";
+  if (FLOWER_CATEGORIES.has(product.category)) return "flowers";
+  if (PRODUCE_CATEGORIES.has(product.category)) return "produce";
+  if (
+    product.category === "Pickled Foods" ||
+    product.category === "Fermented Foods" ||
+    product.category === "Preserves"
+  ) {
     return "pickled";
   }
-  if (product.category === "Fermented Foods") return "pickled";
-  if (matches(title, "jam", "jelly", "preserve", "marmalade")) return "preserves";
-  if (matches(title, "bread", "loaf", "roll", "bun", "donut", "muffin", "scone", "pastry")) return "baked_goods";
-  if (matches(title, "seedling", "plant") && product.category === "Herbs") return "seedlings";
-
-  if (matches(title, "tomato")) return "tomatoes";
-  if (matches(title, "cucumber")) return "cucumbers";
-  if (matches(title, "pepper", "jalapeño", "eggplant", "zucchini")) return "peppers";
-  if (matches(title, "lettuce", "salad", "greens", "kale", "spinach", "chard", "arugula", "microgreen")) {
-    return "lettuce";
-  }
-  if (matches(title, "potato")) return "potatoes";
-  if (matches(title, "carrot")) return "carrots";
-  if (matches(title, "garlic")) return "garlic";
-  if (matches(title, "onion", "shallot")) return "onions";
-  if (product.category === "Herbs" || matches(title, "basil", "mint", "thyme", "oregano", "rosemary")) {
-    return "herbs";
-  }
-  if (matches(title, "strawberry")) return "strawberries";
-  if (matches(title, "blueberry")) return "blueberries";
-  if (matches(title, "apple", "honeycrisp")) return "apples";
-  if (product.category === "Fruits" || matches(title, "peach", "berry", "fruit")) return "fruit";
-  if (product.category === "Vegetables") return "tomatoes";
 
   return null;
 }
@@ -111,7 +77,7 @@ export function filterProductsByMiniMapCategories(
 ): Product[] {
   const available = products.filter((p) => !p.sold);
   if (activeCategories.has("all") || activeCategories.size === 0) {
-    return available;
+    return available.filter((p) => isBakeryCategory(p.category) || getProductMiniMapCategory(p) !== null);
   }
   return available.filter((p) => {
     const cat = getProductMiniMapCategory(p);

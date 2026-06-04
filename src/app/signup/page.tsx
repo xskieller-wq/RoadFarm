@@ -1,111 +1,281 @@
 "use client";
 
+
+
 import { useState } from "react";
+
 import { useRouter } from "next/navigation";
+
 import Link from "next/link";
-import { Flower2 } from "lucide-react";
+
 import { useAuth } from "@/context/AppContext";
 
+import { useMarketplace } from "@/context/MarketplaceContext";
+
+import { buildSignupSeller } from "@/lib/signup-seller";
+
+import { isPhase1SupabaseEnabled } from "@/lib/phase1/config";
+
+import { signUpWithEmail } from "@/lib/phase1/auth-actions";
+
+import FreshDropAuthLayout from "@/components/auth/FreshDropAuthLayout";
+
+
+
 export default function SignupPage() {
+
   const router = useRouter();
+
   const { signup } = useAuth();
+
+  const { addSeller, sellers, hydrated } = useMarketplace();
+
   const [name, setName] = useState("");
+
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
+
   const [role, setRole] = useState<"buyer" | "seller">("buyer");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [error, setError] = useState("");
+
+
+
+  const sellerSignupReady = role !== "seller" || hydrated;
+
+
+
+  const handleSubmit = async (e: React.FormEvent) => {
+
     e.preventDefault();
-    signup(name, email, password, role);
-    if (role === "seller") {
-      router.push("/dashboard");
-    } else {
-      router.push("/search");
+
+    setError("");
+
+
+
+    if (!sellerSignupReady) {
+
+      setError("Marketplace data is still loading. Try again in a moment.");
+
+      return;
+
     }
+
+
+
+    if (isPhase1SupabaseEnabled()) {
+
+      const result = await signUpWithEmail(email, password, name, role);
+
+      if (result.error) {
+
+        setError(result.error);
+
+        return;
+
+      }
+
+      router.push(result.redirect ?? "/");
+
+      return;
+
+    }
+
+    let sellerId: string | undefined;
+
+    if (role === "seller") {
+
+      sellerId = addSeller(buildSignupSeller(name.trim() || "My Bakery", sellers.length));
+
+    }
+
+    signup(name, email, password, role, sellerId);
+
+    if (role === "seller") {
+
+      router.push("/dashboard");
+
+    } else {
+
+      router.push("/buy");
+
+    }
+
   };
 
+
+
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-12">
-      <div className="text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-market-gradient shadow-md">
-          <Flower2 className="h-6 w-6 text-white" />
-        </div>
-        <h1 className="mt-4 text-2xl font-bold text-earth-900">Join RouteFarm</h1>
-        <p className="mt-1 text-earth-600">Find or sell local products along daily routes</p>
-      </div>
 
-      <form onSubmit={handleSubmit} className="card mt-8 space-y-4 p-6">
+    <FreshDropAuthLayout
+
+      title="Join FreshDrop"
+
+      description="Catch fresh bakery drops near you — or list your neighborhood bakery."
+
+      footer={
+
+        <p className="text-center text-sm text-warm-600">
+
+          Already have an account?{" "}
+
+          <Link href="/login" className="font-semibold text-brand-800 hover:text-brand-900">
+
+            Log in
+
+          </Link>
+
+        </p>
+
+      }
+
+    >
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+
+        {error && (
+
+          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
+
+        )}
+
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-earth-700">Full name</label>
+
+          <label className="mb-1.5 block text-sm font-medium text-warm-700">Full name</label>
+
           <input
+
             type="text"
+
             className="input-field"
+
             placeholder="Jane Smith"
+
             value={name}
+
             onChange={(e) => setName(e.target.value)}
+
             required
+
           />
+
         </div>
+
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-earth-700">Email</label>
+
+          <label className="mb-1.5 block text-sm font-medium text-warm-700">Email</label>
+
           <input
+
             type="email"
+
             className="input-field"
+
             placeholder="you@example.com"
+
             value={email}
+
             onChange={(e) => setEmail(e.target.value)}
+
             required
+
           />
+
         </div>
+
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-earth-700">Password</label>
+
+          <label className="mb-1.5 block text-sm font-medium text-warm-700">Password</label>
+
           <input
+
             type="password"
+
             className="input-field"
+
             placeholder="••••••••"
+
             value={password}
+
             onChange={(e) => setPassword(e.target.value)}
+
             required
+
           />
+
         </div>
+
+
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-earth-700">I want to</label>
+
+          <label className="mb-2 block text-sm font-medium text-warm-700">I want to</label>
+
           <div className="grid grid-cols-2 gap-3">
+
             <button
+
               type="button"
+
               onClick={() => setRole("buyer")}
-              className={`rounded-lg border-2 p-3 text-sm font-medium transition-colors ${
+
+              className={`rounded-xl border-2 p-3 text-sm font-semibold transition-colors ${
+
                 role === "buyer"
-                  ? "border-brand-600 bg-brand-50 text-brand-800"
-                  : "border-earth-200 text-earth-600 hover:border-earth-300"
+
+                  ? "border-warm-800 bg-warm-50 text-warm-900"
+
+                  : "border-warm-200 bg-white text-warm-600 hover:border-warm-300"
+
               }`}
+
             >
-              Find products
+
+              Buy bakery
+
             </button>
+
             <button
+
               type="button"
+
               onClick={() => setRole("seller")}
-              className={`rounded-lg border-2 p-3 text-sm font-medium transition-colors ${
+
+              className={`rounded-xl border-2 p-3 text-sm font-semibold transition-colors ${
+
                 role === "seller"
-                  ? "border-brand-600 bg-brand-50 text-brand-800"
-                  : "border-earth-200 text-earth-600 hover:border-earth-300"
+
+                  ? "border-warm-800 bg-warm-50 text-warm-900"
+
+                  : "border-warm-200 bg-white text-warm-600 hover:border-warm-300"
+
               }`}
+
             >
-              Sell products
+
+              Sell bakery
+
             </button>
+
           </div>
+
         </div>
 
-        <button type="submit" className="btn-primary w-full">Create account</button>
+
+
+        <button type="submit" className="btn-reserve w-full" disabled={!sellerSignupReady}>
+
+          {sellerSignupReady ? "Create account" : "Loading marketplace…"}
+
+        </button>
+
       </form>
 
-      <p className="mt-4 text-center text-sm text-earth-600">
-        Already have an account?{" "}
-        <Link href="/login" className="font-medium text-brand-600 hover:text-brand-700">
-          Log in
-        </Link>
-      </p>
-    </div>
+    </FreshDropAuthLayout>
+
   );
+
 }
+
+

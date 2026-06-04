@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { ALL_CATEGORIES } from "@/lib/types";
-import type { ProductCategory, FreshnessLabel } from "@/lib/types";
-import { FRESHNESS_LABEL_OPTIONS } from "@/lib/freshness";
+import { BAKERY_CATEGORIES, FUTURE_CATEGORIES } from "@/lib/types";
+import type { ProductCategory } from "@/lib/types";
+import { BAKERY_FRESHNESS_LABEL_OPTIONS } from "@/lib/freshness";
 
 export default function FilterBar() {
   const router = useRouter();
@@ -34,14 +34,14 @@ export default function FilterBar() {
             value={currentCategory}
             onChange={(e) => updateFilter("category", e.target.value)}
           >
-            <option value="all">All categories</option>
-            <optgroup label="Food">
-              {ALL_CATEGORIES.slice(0, 7).map((cat) => (
+            <option value="all">All bakery</option>
+            <optgroup label="Bakery (MVP)">
+              {BAKERY_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </optgroup>
-            <optgroup label="Flowers">
-              {ALL_CATEGORIES.slice(7).map((cat) => (
+            <optgroup label="Coming later">
+              {FUTURE_CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </optgroup>
@@ -69,7 +69,7 @@ export default function FilterBar() {
             onChange={(e) => updateFilter("freshness", e.target.value)}
           >
             <option value="all">Any freshness</option>
-            {FRESHNESS_LABEL_OPTIONS.map((label) => (
+            {BAKERY_FRESHNESS_LABEL_OPTIONS.map((label) => (
               <option key={label} value={label}>{label}</option>
             ))}
           </select>

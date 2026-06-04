@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider, ReservationProvider } from "@/context/AppContext";
-import { MarketplaceProvider } from "@/context/MarketplaceContext";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import MainContent from "@/components/layout/MainContent";
+import { AppProviders } from "@/app/providers";
+import ClientShell from "@/components/layout/ClientShell";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "RouteFarm — Discover local growers & makers near you",
+  title: "FreshDrop — Today's Fresh Drops",
   description:
-    "Meet local growers, gardeners, flower makers and producers. Explore gardens, watch video tours, read reviews, and reserve for pickup.",
+    "Catch fresh local drops before they're gone. Follow neighborhood bakers, reserve pickup, and build a morning ritual — not another marketplace.",
 };
 
 export default function RootLayout({
@@ -26,17 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-sans`}>
-        <AuthProvider>
-          <MarketplaceProvider>
-            <ReservationProvider>
-              <div className="flex min-h-screen flex-col">
-                <Header />
-                <MainContent>{children}</MainContent>
-                <Footer />
-              </div>
-            </ReservationProvider>
-          </MarketplaceProvider>
-        </AuthProvider>
+        <AppProviders>
+          <ClientShell>{children}</ClientShell>
+        </AppProviders>
       </body>
     </html>
   );

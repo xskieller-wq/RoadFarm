@@ -9,7 +9,7 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import type { Product, Seller, SellerReview, UserReport } from "@/lib/types";
+import type { Product, Seller } from "@/lib/types";
 import type { SellerBadgeId } from "@/lib/types";
 import {
   marketplaceInitialState,
@@ -17,13 +17,12 @@ import {
   type MarketplaceActions,
   type MarketplaceState,
 } from "./marketplace-store";
-import { loadPersistedMarketplace, persistMarketplace } from "@/lib/marketplace-persistence";
 
 interface MarketplaceContextType extends MarketplaceActions {
   sellers: Seller[];
   products: Product[];
-  reviews: SellerReview[];
-  reports: UserReport[];
+  reviews: MarketplaceState["reviews"];
+  reports: MarketplaceState["reports"];
   approvedSellers: Seller[];
   featuredSellers: Seller[];
   hydrated: boolean;
@@ -41,15 +40,46 @@ export function MarketplaceProvider({ children }: { children: ReactNode }) {
   const skipPersist = useRef(true);
 
   useEffect(() => {
-    const saved = loadPersistedMarketplace();
-    if (saved) setState(saved);
-    setHydrated(true);
-    skipPersist.current = false;
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const { loadPersistedMarketplace } = await import("@/lib/marketplace-persistence");
+        const saved = loadPersistedMarketplace();
+        if (cancelled) return;
+
+        if (saved) {
+          setState(saved);
+        } else {
+          const { loadSeedMarketplaceState } = await import("@/context/marketplace-seed-loader");
+          setState(await loadSeedMarketplaceState());
+        }
+      } catch (err) {
+        console.error("[MarketplaceProvider] failed to hydrate marketplace", err);
+        try {
+          const { loadSeedMarketplaceState } = await import("@/context/marketplace-seed-loader");
+          if (!cancelled) setState(await loadSeedMarketplaceState());
+        } catch {
+          /* layout must still mount */
+        }
+      } finally {
+        if (!cancelled) {
+          setHydrated(true);
+          skipPersist.current = false;
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     if (!hydrated || skipPersist.current) return;
-    persistMarketplace(state);
+    void import("@/lib/marketplace-persistence").then(({ persistMarketplace }) =>
+      persistMarketplace(state)
+    );
   }, [state, hydrated]);
 
   const actions = useMemo(() => createMarketplaceActions(setState), []);

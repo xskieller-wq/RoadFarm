@@ -6,11 +6,16 @@ RouteFarm is a responsive web application MVP that helps users discover and rese
 
 ## Tech Stack
 
-- **Next.js 15** (App Router)
+- **Next.js 15** (App Router) — web app at repo root `src/`
 - **TypeScript**
 - **Tailwind CSS**
+- **Supabase** (Auth, PostgreSQL, PostGIS) — Phase 1 when enabled
+- **Expo** — `apps/mobile/` scaffold (Phase 1b)
+- **Mapbox** — Phase 2+
 
-This is a **frontend prototype** using mock data only. No backend or real APIs are connected.
+By default the app runs on **mock data** (`localStorage`). Set `NEXT_PUBLIC_USE_SUPABASE=true` and Supabase env vars to use Phase 1 auth, onboarding, seller profiles, templates, and home feed.
+
+See [docs/PHASE1_MVP.md](docs/PHASE1_MVP.md) and [docs/FOLDER_STRUCTURE.md](docs/FOLDER_STRUCTURE.md).
 
 ## Getting Started
 
@@ -28,6 +33,24 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Phase 1 with Supabase (optional)
+
+1. Copy `.env.example` to `.env.local` and set Supabase URL + anon key.
+2. Install [Supabase CLI](https://supabase.com/docs/guides/cli) and run:
+
+```bash
+supabase start
+supabase db reset
+```
+
+3. Set `NEXT_PUBLIC_USE_SUPABASE=true` in `.env.local` (copy anon URL/key from `npx supabase status`).
+4. `npx supabase db reset` loads **demo bakery seed** (5 approved sellers, 12 products, live home feed).
+5. Optional logins (password `RouteFarmDemo1!`):
+   - `buyer@demo.routefarm.local` — buyer, onboarding complete
+   - `harbor@demo.routefarm.local` — Harbor Street Bakery seller
+   - `sunrise@demo.routefarm.local`, `loafhouse@demo.routefarm.local`, etc.
+6. Open `/` — “Live from your marketplace” shows seeded paczki, sourdough, donuts, pastries, and rolls.
+
 ## Pages
 
 | Page | URL | Description |
@@ -41,8 +64,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | Seller Dashboard | `/dashboard` | Manage products |
 | Add Product | `/dashboard/products/new` | List new product |
 | Compliance | `/dashboard/compliance` | Cottage food onboarding |
-| Login | `/login` | Sign in |
+| Login | `/login` | Sign in (Supabase when enabled) |
 | Signup | `/signup` | Create account |
+| Buyer onboarding | `/onboarding/buyer` | Phase 1 |
+| Seller onboarding | `/onboarding/seller` | Phase 1 |
+| Product templates | `/dashboard/templates` | Seller templates |
+| Home feed API | `/api/phase1/feed` | JSON feed |
 
 ## Demo Accounts
 
